@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from datetime import timedelta
 import environ
+from apps.core.firebase import initialize_firebase_admin
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,7 +42,7 @@ SECRET_KEY = "django-insecure-ry_atz82mjd&6w8(yq8fnjlrh&38qxb*n1g7j8ce8pb1t_o1!j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False) 
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[]),
+ALLOWED_HOSTS = ["*"] 
 
 
 # Application definition
@@ -187,4 +188,15 @@ CORS_ALLOWED_ORIGINS = [
    "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+# --------------------------------------------------------------------------
+# APPLICATION STARTUP INITIALIZATION
+# --------------------------------------------------------------------------
+# This code runs once when the Django application starts.
+# It's a reliable place to initialize third-party services.
+
+print("Attempting to initialize Firebase Admin SDK...")
+initialize_firebase_admin()
+print("Firebase Admin SDK initialization check complete.")
+
+
 

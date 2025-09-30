@@ -22,11 +22,11 @@ class UserListView(generics.ListAPIView):
     """
     API view to retrieve a list of users.
     NOTE: In a real app, you'd likely want this to be protected
-    by IsAdminOrManagerUser permission.
+    by a stricter permission like IsAdminOrManagerUser.
     """
     queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated] # Or a stricter permission
+    permission_classes = [IsAuthenticated]
 
 
 class FirebaseLoginView(generics.GenericAPIView):
@@ -48,17 +48,27 @@ class FirebaseLoginView(generics.GenericAPIView):
             decoded_token = auth.verify_id_token(id_token)
             firebase_uid = decoded_token["uid"]
             email = decoded_token.get("email")
-            logger.info(f"Token verified successfully for UID: {firebase_uid}, Email: {email}")
+            
+            # --- NEW: Get the name from the token ---
+            name = decoded_token.get("name", "")
+            # Safely split the name into first and last parts. Handles cases with no last name.
+            first_name, last_name = (name.split(" ", 1) + [""])[:2]
+            
+            logger.info(f"Token verified successfully for UID: {firebase_uid}, Email: {email}, Name: {name}")
 
             logger.info(f"Attempting to get or create user with username={firebase_uid}.")
-            # Use Firebase UID as the unique username in our system
-            user, created = User.objects.get_or_create(
-                username=firebase_uid,
-                defaults={'email': email}
-            )
+            # First, get or create the user based only on the unique username (Firebase UID)
+            user, created = User.objects.get_or_create(username=firebase_uid)
             
             if created:
-                logger.info(f"New user CREATED with username: {firebase_uid}")
+                # --- NEW: If created, populate their profile details ---
+                user.email = email
+                user.first_name = first_name
+                user.last_name = last_name
+                # Set an unusable password since they authenticate via Firebase
+                user.set_unusable_password()
+                user.save()
+                logger.info(f"New user CREATED with username: {firebase_uid}, Name: {name}")
             else:
                 logger.info(f"Existing user FOUND with username: {firebase_uid}")
 
@@ -81,7 +91,6 @@ class FirebaseLoginView(generics.GenericAPIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         except Exception as e:
-            # This is the critical part for debugging. It will log the full error.
             logger.error(f"An unexpected error occurred in FirebaseLoginView: {e}", exc_info=True)
             return Response(
                 {"error": "An internal server error occurred. Please check server logs."},

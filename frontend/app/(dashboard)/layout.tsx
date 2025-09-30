@@ -10,37 +10,51 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // If not loading and no user, redirect to login
+    // If auth state is no longer loading and there is no backend user,
+    // they are not authenticated. Redirect to the login page.
     if (!loading && !backendUser) {
       router.push('/login');
     }
   }, [backendUser, loading, router]);
 
-  // While loading, you can show a spinner or a blank screen
+  // While loading the auth state, show a simple loading message.
+  // This prevents a flicker of the dashboard for unauthenticated users.
   if (loading || !backendUser) {
-    return <div>Loading...</div>; // Or a loading spinner component
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
-  // If logged in, render the layout and children
+  // If we are done loading and have a user, render the full dashboard layout.
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 text-white p-4">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-gray-800 text-white p-4 flex flex-col">
         <h2 className="text-2xl font-bold mb-6">LogiPro</h2>
-        <nav>
+        <nav className="flex-grow">
           <ul>
-            <li className="mb-2"><a href="/dashboard" className="block p-2 rounded hover:bg-gray-700">Dashboard</a></li>
-            {/* We will add more links here */}
+            <li className="mb-2">
+              <a href="/dashboard" className="block p-2 rounded hover:bg-gray-700">Dashboard</a>
+            </li>
+            <li className="mb-2">
+              <a href="/warehouses" className="block p-2 rounded hover:bg-gray-700">Warehouses</a>
+            </li>
+            {/* Add more navigation links here as you build pages */}
           </ul>
         </nav>
       </aside>
       
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="flex-1 flex flex-col">
         {/* Top Navbar */}
         <header className="bg-white shadow p-4 flex justify-between items-center">
-          <div>Welcome, {backendUser.username}!</div>
-          <button onClick={logout} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+          
+          {/* --- NEW: Display first_name with a fallback to username --- */}
+          <div>Welcome, {backendUser.first_name || backendUser.username}!</div>
+          
+          <button onClick={logout} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">
             Logout
           </button>
         </header>
