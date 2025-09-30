@@ -41,6 +41,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <li className="mb-2">
               <a href="/warehouses" className="block p-2 rounded hover:bg-gray-700">Warehouses</a>
             </li>
+            <li className="mb-2">
+              <a href="/products" className="block p-2 rounded hover:bg-gray-700">Products</a>
+            </li>
+            <li className="mb-2">
+              <a href="/orders" className="block p-2 rounded hover:bg-gray-700">Orders</a>
+            </li>
             {/* Add more navigation links here as you build pages */}
           </ul>
         </nav>

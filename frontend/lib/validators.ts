@@ -2,11 +2,24 @@
 import { z } from 'zod';
 
 export const warehouseSchema = z.object({
-  name: z.string().min(3, { message: "Name must be at least 3 characters long." }).max(100),
-  address: z.string().min(5, { message: "Address must be at least 5 characters long." }),
-  city: z.string().min(2, { message: "City is required." }),
-  country: z.string().min(2, { message: "Country is required." }),
+  // ... your existing warehouse schema ...
 });
 
-// This creates a TypeScript type based on the schema
 export type WarehouseFormData = z.infer<typeof warehouseSchema>;
+
+// --- REPLACE THE OLD PRODUCT SCHEMA WITH THIS NEW ONE ---
+export const productSchema = z.object({
+  sku: z.string().min(3, { message: "SKU must be at least 3 characters." }),
+  name: z.string().min(3, { message: "Name must be at least 3 characters." }),
+  description: z.string().optional(),
+  
+  // This is the key change. We create a pre-processing pipeline.
+  weight_kg: z.preprocess(
+    // The value from the form
+    (val) => (String(val).trim() === '' ? undefined : Number(val)),
+    // The validation to apply after pre-processing
+    z.number().min(0, { message: "Weight must be a positive number." }).optional()
+  ),
+});
+
+export type ProductFormData = z.infer<typeof productSchema>;
