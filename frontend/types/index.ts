@@ -27,3 +27,11 @@ export interface Order {
   order_date: string; // This will be an ISO date string
   items: OrderItem[];
 }
+
+export interface DashboardSummary {
+  total_customers: number;
+  total_orders: number;
+  total_products: number;
+  shipments_in_transit: number;
+  recent_revenue_30d: string; // The backend sends this as a formatted string
+}
