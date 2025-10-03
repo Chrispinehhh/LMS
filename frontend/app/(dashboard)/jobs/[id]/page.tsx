@@ -51,9 +51,7 @@ export default function JobDetailPage() {
       setSelectedDriverId("");
       setSelectedVehicleId("");
     }
-    // If a job is not assigned, automatically enter edit mode.
-    // Otherwise, start in view mode.
-    setIsEditing(!isAssigned); 
+    setIsEditing(!isAssigned);
   }, [currentShipment, isAssigned]);
 
   const handleAssign = async () => {
@@ -61,28 +59,25 @@ export default function JobDetailPage() {
         toast.error("Shipment data not found.");
         return;
     }
-    if (!selectedDriverId || !selectedVehicleId) {
-      toast.error("Please select both a driver and a vehicle.");
-      return;
-    }
     
-    const payload: { driver_id: string; vehicle_id: string; status?: string } = {
-        driver_id: selectedDriverId,
-        vehicle_id: selectedVehicleId,
-    };
+    // --- THIS IS THE FIX ---
+    const driverIdPayload = selectedDriverId === "NONE" ? null : selectedDriverId || null;
+    const vehicleIdPayload = selectedVehicleId === "NONE" ? null : selectedVehicleId || null;
 
-    if (currentShipment.status === 'PENDING') {
-        payload.status = 'IN_TRANSIT';
-    }
+    const newStatus = (driverIdPayload && vehicleIdPayload) ? 'IN_TRANSIT' : 'PENDING';
 
     try {
-      await apiClient.patch(`/shipments/${currentShipment.id}/`, payload);
+      await apiClient.patch(`/shipments/${currentShipment.id}/`, {
+        driver_id: driverIdPayload,
+        vehicle_id: vehicleIdPayload,
+        status: newStatus,
+      });
       toast.success("Assignment updated successfully!");
       setIsEditing(false);
       mutateJob();
       mutateShipments();
     } catch (error) {
-      toast.error("Failed to assign job.");
+      toast.error("Failed to update assignment.");
       console.error(error);
     }
   };
@@ -127,17 +122,25 @@ export default function JobDetailPage() {
                 <div className="space-y-4">
                   {!isAssigned && <p className="text-sm text-gray-600">This job is pending assignment.</p>}
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Assign Driver</label>
+                    <label className="text-sm font-medium mb-1 block">Driver</label>
                     <Select onValueChange={setSelectedDriverId} disabled={driversLoading} value={selectedDriverId}>
                       <SelectTrigger><SelectValue placeholder={driversLoading ? "Loading..." : "Select a driver"} /></SelectTrigger>
-                      <SelectContent>{drivers?.map(d => <SelectItem key={d.id} value={d.id}>{d.user.first_name} {d.user.last_name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {/* --- THIS IS THE FIX --- */}
+                        <SelectItem value="NONE">None</SelectItem>
+                        {drivers?.map(d => <SelectItem key={d.id} value={d.id}>{d.user.first_name} {d.user.last_name}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Assign Vehicle (Available Only)</label>
+                    <label className="text-sm font-medium mb-1 block">Vehicle (Available Only)</label>
                     <Select onValueChange={setSelectedVehicleId} disabled={vehiclesLoading} value={selectedVehicleId}>
                       <SelectTrigger><SelectValue placeholder={vehiclesLoading ? "Loading..." : "Select a vehicle"} /></SelectTrigger>
-                      <SelectContent>{vehicles?.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.license_plate})</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {/* --- THIS IS THE FIX --- */}
+                        <SelectItem value="NONE">None</SelectItem>
+                        {vehicles?.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.license_plate})</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                   <div className="flex gap-2 pt-2">
