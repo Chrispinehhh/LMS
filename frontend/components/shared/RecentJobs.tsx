@@ -1,8 +1,8 @@
-// frontend/components/shared/RecentOrders.tsx
+// frontend/components/shared/RecentJobs.tsx
 "use client";
 
 import { useApi } from "@/hooks/useApi";
-import { Order } from "@/types";
+import { Job } from "@/types";
 import Link from "next/link";
 import {
   Table,
@@ -14,13 +14,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
-export function RecentOrders() {
-  // We can use query params to limit the results on the backend
-  const { data: orders, isLoading } = useApi<Order[]>('/orders/?limit=5');
+export function RecentJobs() {
+  const { data: jobs, isLoading } = useApi<Job[]>('/jobs/?limit=5');
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
+      <h2 className="text-xl font-semibold mb-4">Recent Jobs</h2>
       <Table>
         <TableHeader>
           <TableRow>
@@ -32,15 +31,15 @@ export function RecentOrders() {
         <TableBody>
           {isLoading ? (
             <TableRow><TableCell colSpan={3} className="text-center">Loading...</TableCell></TableRow>
-          ) : orders?.map((order) => (
-            <TableRow key={order.id}>
+          ) : jobs?.map((job) => (
+            <TableRow key={job.id}>
               <TableCell>
-                <div className="font-medium">{order.customer.first_name} {order.customer.last_name}</div>
-                <div className="text-sm text-gray-500">{order.customer.email}</div>
+                <div className="font-medium">{job.customer.first_name} {job.customer.last_name}</div>
+                <div className="text-sm text-gray-500">{job.customer.email}</div>
               </TableCell>
-              <TableCell>{order.status}</TableCell>
+              <TableCell>{job.status}</TableCell>
               <TableCell className="text-right">
-                <Link href={`/orders/${order.id}`} passHref>
+                <Link href={`/jobs/${job.id}`} passHref>
                   <Button variant="outline" size="sm">Details</Button>
                 </Link>
               </TableCell>

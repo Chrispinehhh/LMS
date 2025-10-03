@@ -4,9 +4,9 @@
 import { useApi } from "@/hooks/useApi";
 import { DashboardSummary } from "@/types";
 import { StatCard } from "@/components/shared/StatCard";
-import { OrdersChart } from "@/components/shared/OrdersChart";
-import { RecentOrders } from "@/components/shared/RecentOrders";
-import { Users, Package, ShoppingCart, Truck } from "lucide-react";
+import { JobsChart } from "@/components/shared/JobsChart";
+import { RecentJobs } from "@/components/shared/RecentJobs";
+import { Users, ShoppingCart, Truck, ClipboardList } from "lucide-react";
 
 export default function DashboardPage() {
   const { data: summary, error, isLoading } = useApi<DashboardSummary>('/reports/summary/');
@@ -17,10 +17,8 @@ export default function DashboardPage() {
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard Overview</h1>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading || !summary ? (
-          // Skeleton loaders
           [...Array(4)].map((_, i) => (
             <div key={i} className="bg-white p-6 rounded-lg shadow animate-pulse h-[116px]"></div>
           ))
@@ -29,19 +27,22 @@ export default function DashboardPage() {
             <StatCard title="Total Revenue (30d)" value={`$${summary.recent_revenue_30d}`} icon={ShoppingCart} />
             <StatCard title="Shipments In Transit" value={summary.shipments_in_transit} icon={Truck} />
             <StatCard title="Total Customers" value={summary.total_customers} icon={Users} />
-            <StatCard title="Total Products" value={summary.total_products} icon={Package} />
+            <StatCard 
+              title="Total Jobs" 
+              value={summary.total_jobs} 
+              icon={ClipboardList} 
+            />
           </>
         )}
       </div>
 
-      {/* Main Content Area: Chart and Recent Orders */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Orders (Last 7 Days)</h2>
-          <OrdersChart />
+          <h2 className="text-xl font-semibold mb-4">Jobs (Last 7 Days)</h2>
+          <JobsChart />
         </div>
         <div className="lg:col-span-1">
-          <RecentOrders />
+          <RecentJobs />
         </div>
       </div>
     </div>

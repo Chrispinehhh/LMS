@@ -2,27 +2,32 @@
 
 from rest_framework import serializers
 from .models import Job
+from users.models import User
 from users.serializers import UserSerializer
 
 class JobSerializer(serializers.ModelSerializer):
     """
     Serializer for the Job model.
-    Handles nested representation of the customer.
     """
     # On read requests, display the full nested customer object.
     customer = UserSerializer(read_only=True)
     
-    # On write requests (POST/PUT), we only need to provide the customer's ID.
-    customer_id = serializers.UUIDField(write_only=True, source='customer')
+    # On write requests (POST/PUT), we expect a UUID for the customer.
+    # This field will be used to look up the User instance.
+    customer_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), 
+        source='customer', 
+        write_only=True
+    )
 
     class Meta:
         model = Job
-        # List all fields from the Job model that we want in our API
         fields = [
             'id',
             'customer',
             'customer_id',
             'status',
+            'service_type', # Make sure this is in the list
             'cargo_description',
             'pickup_address',
             'pickup_city',
@@ -36,7 +41,4 @@ class JobSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        
-        # Make the status field read-only during creation.
-        # It defaults to 'PENDING' and should be updated via separate actions.
         read_only_fields = ['status', 'created_at', 'updated_at']
