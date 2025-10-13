@@ -2,9 +2,9 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Truck, Building2, Package, CheckCircle, ArrowRight } from 'lucide-react';
-import React from 'react'; // Import React for type definitions
+import React from 'react';
 
-// An array to hold our service data. This makes the page easy to update.
+// The data array remains the same
 const services = [
   {
     icon: Truck as React.ElementType,
@@ -28,53 +28,60 @@ const services = [
 
 export default function ServicesPage() {
   return (
-    <div className="bg-white">
-      {/* Page Header */}
-      <section className="bg-gray-50 border-b border-gray-200">
-        <div className="container mx-auto px-6 text-center py-20">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
-            Our Logistics Services
-          </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-            Tailored solutions designed for your specific needs, big or small. We handle every job with professionalism and care.
-          </p>
-        </div>
-      </section>
+    <div className="relative bg-gray-900 text-white">
+      {/* Background Image & Overlay */}
+      <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: "url('/hero-background.jpg')" }}></div>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
 
-      {/* Services List Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-6">
-          <div className="space-y-20">
-            {services.map((service, index) => (
-              <div key={index} className="grid md:grid-cols-2 gap-12 items-center">
-                {/* Image/Icon on one side */}
-                <div className={`flex items-center justify-center p-8 bg-gray-100 rounded-2xl ${index % 2 !== 0 ? 'md:order-last' : ''}`}>
-                  <service.icon className="h-40 w-40 text-blue-600" />
-                </div>
-
-                {/* Text content on the other */}
-                <div className="py-4">
-                  <h2 className="text-3xl font-bold text-gray-900">{service.title}</h2>
-                  <p className="mt-4 text-lg text-gray-600">{service.description}</p>
-                  <ul className="mt-6 space-y-3">
-                    {service.features.map((feature, fIndex) => (
-                      <li key={fIndex} className="flex items-start gap-3">
-                        <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-1" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
+      <div className="relative z-10">
+        {/* Page Header */}
+        <section className="pt-32 pb-16">
+          <div className="container mx-auto px-6 text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Our Logistics Services
+            </h1>
+            <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-300">
+              Tailored solutions designed for your specific needs, big or small. We handle every job with professionalism and care.
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Final Call to Action Section */}
-      <section className="bg-gray-900">
-        <div className="container mx-auto px-6 py-20">
-          <div className="text-center text-white max-w-3xl mx-auto">
+        {/* Services List with Glassmorphism */}
+        <section className="pb-24">
+          <div className="container mx-auto px-6">
+            <div className="space-y-16">
+              {services.map((service, index) => (
+                // Each service is now a glass card
+                <div key={index} className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+                  <div className="grid md:grid-cols-5 items-center">
+                    {/* Icon section */}
+                    <div className={`md:col-span-2 flex items-center justify-center p-8 bg-white/5 ${index % 2 !== 0 ? 'md:order-last' : ''}`}>
+                      <service.icon className="h-40 w-40 text-blue-300" />
+                    </div>
+
+                    {/* Text content section */}
+                    <div className="md:col-span-3 p-8">
+                      <h2 className="text-3xl font-bold text-white">{service.title}</h2>
+                      <p className="mt-4 text-lg text-gray-300">{service.description}</p>
+                      <ul className="mt-6 space-y-3">
+                        {service.features.map((feature, fIndex) => (
+                          <li key={fIndex} className="flex items-start gap-3">
+                            <CheckCircle className="h-6 w-6 text-green-400 flex-shrink-0 mt-1" />
+                            <span className="text-gray-200">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final Call to Action Section */}
+        <section className="bg-transparent">
+          <div className="container mx-auto px-6 pb-24 text-center text-white max-w-3xl">
             <h2 className="text-3xl font-bold tracking-tight">Ready to Plan Your Move or Delivery?</h2>
             <p className="mt-4 text-lg text-blue-100">
               Our team is standing by to help you get started. Get a free, no-obligation quote in minutes.
@@ -87,8 +94,8 @@ export default function ServicesPage() {
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }
