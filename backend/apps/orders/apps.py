@@ -12,4 +12,4 @@ class OrdersConfig(AppConfig):
         We import our signals here to ensure they are registered.
         """
         # The following line is crucial for your signals to work.
-       # import orders.signals
+        import orders.signals

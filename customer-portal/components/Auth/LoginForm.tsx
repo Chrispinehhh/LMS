@@ -3,24 +3,22 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { AuthError } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
+  onSuccess?: () => void; // Add this prop
 }
 
-export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
+export default function LoginForm({ onSwitchToRegister, onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
+  const { emailLogin, googleLogin } = useAuth();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,11 +26,14 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     setError('');
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      await emailLogin(email, password);
+      // Call onSuccess to close the modal
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: unknown) {
       console.error('Login error:', error);
-      const authError = error as AuthError;
+      const authError = error as { code?: string; message?: string };
       
       switch (authError.code) {
         case 'auth/invalid-email':
@@ -50,8 +51,11 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         case 'auth/too-many-requests':
           setError('Too many failed attempts. Please try again later');
           break;
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your connection');
+          break;
         default:
-          setError('Failed to sign in. Please try again');
+          setError(authError.message || 'Failed to sign in. Please try again');
       }
     } finally {
       setLoading(false);
@@ -63,15 +67,18 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     setError('');
     
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push('/dashboard');
+      await googleLogin();
+      // Call onSuccess to close the modal
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: unknown) {
       console.error('Google login error:', error);
-      const authError = error as AuthError;
+      const authError = error as { code?: string; message?: string };
       
       switch (authError.code) {
         case 'auth/popup-closed-by-user':
+          // User closed the popup, no need to show error
           break;
         case 'auth/popup-blocked':
           setError('Popup was blocked by your browser. Please allow popups for this site');
@@ -79,8 +86,11 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         case 'auth/unauthorized-domain':
           setError('This domain is not authorized for Google sign-in');
           break;
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your connection');
+          break;
         default:
-          setError('Failed to sign in with Google. Please try again');
+          setError(authError.message || 'Failed to sign in with Google. Please try again');
       }
     } finally {
       setLoading(false);
@@ -105,6 +115,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
               onChange={(e) => setEmail(e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-xl pl-10 py-6 backdrop-blur-sm focus:bg-white/15 focus:border-white/30 transition-all"
               required
+              disabled={loading}
             />
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
           </div>
@@ -119,6 +130,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-xl pl-10 py-6 backdrop-blur-sm focus:bg-white/15 focus:border-white/30 transition-all"
               required
+              disabled={loading}
             />
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
           </div>
@@ -126,10 +138,18 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center text-white/70">
-            <input type="checkbox" className="rounded border-white/30 bg-white/10 text-blue-500 focus:ring-blue-500" />
+            <input 
+              type="checkbox" 
+              className="rounded border-white/30 bg-white/10 text-blue-500 focus:ring-blue-500" 
+              disabled={loading}
+            />
             <span className="ml-2">Remember me</span>
           </label>
-          <button type="button" className="text-blue-300 hover:text-blue-200 transition-colors">
+          <button 
+            type="button" 
+            className="text-blue-300 hover:text-blue-200 transition-colors disabled:opacity-50"
+            disabled={loading}
+          >
             Forgot password?
           </button>
         </div>
@@ -137,7 +157,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-blue-500/25 group disabled:opacity-50 disabled:hover:scale-100"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-blue-500/25 group disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
         >
           {loading ? (
             'Signing in...'
@@ -161,7 +181,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       <Button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 py-6 rounded-xl font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-sm hover:shadow-md"
+        className="w-full bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 py-6 rounded-xl font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
       >
         <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -176,7 +196,8 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         <span>Don&apos;t have an account? </span>
         <button
           onClick={onSwitchToRegister}
-          className="text-blue-300 hover:text-blue-200 font-semibold transition-colors"
+          className="text-blue-300 hover:text-blue-200 font-semibold transition-colors disabled:opacity-50"
+          disabled={loading}
         >
           Sign up
         </button>

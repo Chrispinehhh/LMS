@@ -10,11 +10,11 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // Assumes firebase.ts is in lib
-import apiClient from '@/lib/api';     // Assumes api.ts is in lib
-import { useRouter } from 'next/navigation';
-import { getToken, setToken, removeToken } from '@/lib/token'; // Assumes token.ts is in lib
-import { BackendUser } from '@/types'; // Assumes types/index.ts exists
+import { auth } from '@/lib/firebase';
+import apiClient from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { getToken, setToken, removeToken } from '@/lib/token';
+import { BackendUser } from '@/types';
 
 // Define the shape of the context's value
 interface AuthContextType {
@@ -34,7 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [backendUser, setBackendUser] = useState<BackendUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -71,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
   }, []);
 
-  // Handler for the token exchange process, used by both login methods
+  // Updated handler without automatic redirects
   const handleTokenExchange = async (firebaseToken: string) => {
     const backendResponse = await apiClient.post('/auth/firebase/', { token: firebaseToken });
     const { access: accessToken, user: backendUserData } = backendResponse.data;
@@ -80,13 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     setBackendUser(backendUserData);
 
-    // Redirect to the appropriate dashboard
-    if (backendUserData.role === 'CUSTOMER') {
-      router.push('/my-jobs'); // Future customer dashboard
-    } else {
-      // If a manager/admin logs in here, send them to the admin portal
-      window.location.href = 'http://localhost:3000/dashboard'; 
-    }
+    // Show success message instead of redirecting
+    toast.success(`Welcome back, ${backendUserData.first_name}!`);
   };
   
   // Login with Google
@@ -101,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error during Google login:", error);
-      throw error; // Re-throw to be caught by the component
+      toast.error("Google login failed. Please try again.");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -118,7 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error during email login:", error);
-      throw error; // Re-throw to be caught by the component
+      toast.error("Login failed. Please check your credentials.");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -129,7 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     removeToken();
     delete apiClient.defaults.headers.common['Authorization'];
     setBackendUser(null);
-    router.push('/login');
+    toast.success("You have been logged out successfully.");
+    // No redirect - user stays on current page
   };
 
   const value = { firebaseUser, backendUser, loading, googleLogin, emailLogin, logout };
