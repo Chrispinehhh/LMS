@@ -9,18 +9,30 @@ export interface BackendUser {
   last_name: string;
 }
 
-// --- THIS IS THE NEW SHAPE FOR THE JOB LIST ---
 export interface ShipmentListItem {
-  id: string; // This is the Shipment's ID
+  id: string;
   job_id: string;
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
   customer_name: string;
   pickup_address: string;
   delivery_address: string;
-  requested_pickup_date: string; // ISO 8601 String
+  requested_pickup_date: string;
 }
 
-// We will need a more detailed Job type for the detail screen later
 export interface JobDetail {
-    // ...
+  id: string;
+  service_type: string;
+  // --- THIS IS THE FIX ---
+  // This now uses the same statuses as a Shipment.
+  status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
+  cargo_description: string;
+  pickup_address: string;
+  pickup_city: string;
+  pickup_contact_person: string;
+  pickup_contact_phone: string;
+  delivery_address: string;
+  delivery_city: string;
+  delivery_contact_person: string;
+  delivery_contact_phone: string;
+  requested_pickup_date: string;
 }

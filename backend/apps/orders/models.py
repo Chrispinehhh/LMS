@@ -7,14 +7,8 @@ from apps.core.models import BaseModel
 class Job(BaseModel):
     """
     Represents a transportation job requested by a customer.
+    The status of the job is now derived from its related Shipment.
     """
-    class JobStatus(models.TextChoices):
-        PENDING = 'PENDING', 'Pending'
-        IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
-        COMPLETED = 'COMPLETED', 'Completed'
-        CANCELLED = 'CANCELLED', 'Cancelled'
-
-    # --- ADD THIS NEW CLASS FOR SERVICE TYPES ---
     class ServiceType(models.TextChoices):
         RESIDENTIAL_MOVING = 'RESIDENTIAL_MOVING', 'Residential Moving'
         OFFICE_RELOCATION = 'OFFICE_RELOCATION', 'Office Relocation'
@@ -23,11 +17,10 @@ class Job(BaseModel):
 
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='jobs')
     
-    # --- ADD THIS NEW FIELD ---
     service_type = models.CharField(
         max_length=50, 
         choices=ServiceType.choices,
-        default=ServiceType.SMALL_DELIVERIES # Set a sensible default
+        default=ServiceType.SMALL_DELIVERIES
     )
     
     cargo_description = models.TextField()
@@ -44,8 +37,9 @@ class Job(BaseModel):
     delivery_contact_person = models.CharField(max_length=100)
     delivery_contact_phone = models.CharField(max_length=20)
 
-    status = models.CharField(max_length=20, choices=JobStatus.choices, default=JobStatus.PENDING)
     requested_pickup_date = models.DateTimeField()
+
+    # --- THE 'status' FIELD HAS BEEN REMOVED FROM THIS MODEL ---
 
     def __str__(self):
         return f"Job {self.id} for {self.customer.username if self.customer else 'N/A'}"

@@ -9,16 +9,17 @@ class JobSerializer(serializers.ModelSerializer):
     """
     Serializer for the Job model.
     """
-    # On read requests, display the full nested customer object.
     customer = UserSerializer(read_only=True)
-    
-    # On write requests (POST/PUT), we expect a UUID for the customer.
-    # This field will be used to look up the User instance.
     customer_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), 
-        source='customer', 
+        queryset=User.objects.all(),
+        source='customer',
         write_only=True
     )
+
+    # --- THIS IS THE KEY CHANGE ---
+    # This field is read-only and gets its value from the 'status'
+    # attribute of the related 'shipment' object.
+    status = serializers.CharField(source='shipment.status', read_only=True)
 
     class Meta:
         model = Job
@@ -26,8 +27,8 @@ class JobSerializer(serializers.ModelSerializer):
             'id',
             'customer',
             'customer_id',
-            'status',
-            'service_type', # Make sure this is in the list
+            'status', # The status now comes from the shipment
+            'service_type',
             'cargo_description',
             'pickup_address',
             'pickup_city',

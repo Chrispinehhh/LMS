@@ -2,6 +2,8 @@
 
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Vehicle, Driver, Shipment
@@ -29,11 +31,38 @@ class VehicleViewSet(viewsets.ModelViewSet):
 class DriverViewSet(viewsets.ModelViewSet):
     """
     A ViewSet for viewing and editing Driver profiles.
-    Accessible by Managers and Admins.
+    Also includes a custom action for drivers to get their own jobs.
     """
     queryset = Driver.objects.all().select_related('user').order_by('user__first_name')
     serializer_class = DriverSerializer
     permission_classes = [IsAdminOrManagerUser]
+
+    # --- THIS IS THE NEW, CORRECT METHOD ---
+    @action(
+        detail=False, 
+        methods=['get'], 
+        url_path='me/jobs', 
+        permission_classes=[IsDriverUser]
+    )
+    def my_jobs(self, request):
+        """
+        An endpoint for a driver to retrieve their own assigned jobs.
+        Accessible at /api/v1/drivers/me/jobs/
+        """
+        try:
+            # The IsDriverUser permission should ensure this exists, but we check to be safe
+            driver_profile = request.user.driver_profile
+            
+            assigned_shipments = Shipment.objects.filter(
+                driver=driver_profile
+            ).select_related('job__customer').order_by('job__requested_pickup_date')
+            
+            # Use the lightweight serializer for the list view
+            serializer = MyJobsShipmentSerializer(assigned_shipments, many=True)
+            return Response(serializer.data)
+        except Driver.DoesNotExist:
+            # This will be caught by the IsDriverUser permission, but is a good fallback.
+            return Response({"detail": "No driver profile found for this user."}, status=403)
 
 
 class ShipmentViewSet(viewsets.ModelViewSet):
@@ -57,23 +86,6 @@ class ShipmentViewSet(viewsets.ModelViewSet):
     filterset_class = ShipmentFilter
 
 
-# --- THIS IS THE FINAL, CORRECTED VIEW ---
-class MyAssignedJobsView(generics.ListAPIView):
-    """
-    Returns a list of shipments (jobs) assigned to the currently
-    authenticated DRIVER user.
-    """
-    serializer_class = MyJobsShipmentSerializer
-    permission_classes = [IsDriverUser] # It now uses our definitive permission class
-
-    def get_queryset(self):
-        """
-        This view returns a list of all shipments for the
-        currently authenticated user's driver profile.
-        The IsDriverUser permission guarantees a Driver profile exists.
-        """
-        # This is the most robust and direct way to get the data.
-        # It finds shipments where the driver's related user is the current user.
-        return Shipment.objects.filter(
-            driver__user=self.request.user
-        ).select_related('job__customer').order_by('job__requested_pickup_date')
+# --- THIS VIEW IS NO LONGER NEEDED AND HAS BEEN DELETED ---
+# class MyAssignedJobsView(generics.ListAPIView):
+#    ...

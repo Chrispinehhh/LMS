@@ -1,17 +1,21 @@
-// driver-app/src/screens/JobsScreen.tsx
+// src/screens/JobsScreen.tsx
 import React from 'react';
 import { View, Text, Button, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { ShipmentListItem } from '../types'; // <-- Use our new type
+import { ShipmentListItem } from '../types';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-// A reusable component for each item in our list
+// Type for our navigation prop
+type JobsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Jobs'>;
+
 const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () => void }) => (
   <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
     <View>
-      {/* --- THESE LINES ARE NOW UPDATED --- */}
-      <Text style={styles.itemAddress}>From: {item.pickup_address}</Text>
-      <Text style={styles.itemAddress}>To: {item.delivery_address}</Text>
+      <Text style={styles.itemAddress} numberOfLines={1}>From: {item.pickup_address}</Text>
+      <Text style={styles.itemAddress} numberOfLines={1}>To: {item.delivery_address}</Text>
       <Text style={styles.itemDate}>
         Scheduled for: {new Date(item.requested_pickup_date).toLocaleString()}
       </Text>
@@ -25,9 +29,8 @@ const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () =>
 
 export default function JobsScreen() {
   const { user, logout } = useAuth();
-  
-  // Fetch data from our dedicated endpoint
-  const { data: assignedJobs, error, isLoading } = useApi<ShipmentListItem[]>('/jobs/assigned-to-me/');
+  const { data: assignedJobs, error, isLoading, mutate } = useApi<ShipmentListItem[]>('/drivers/me/jobs/');
+  const navigation = useNavigation<JobsScreenNavigationProp>();
 
   const renderContent = () => {
     if (isLoading) {
@@ -46,11 +49,15 @@ export default function JobsScreen() {
         renderItem={({ item }) => (
           <JobListItem 
             item={item}
-            onPress={() => console.log("Navigate to job detail:", item.job_id)}
+            onPress={() => navigation.navigate('JobDetail', { 
+              jobId: item.job_id,
+              shipmentId: item.id // Pass the shipment ID as well
+            })}
           />
         )}
         keyExtractor={(item) => item.id}
-        // Add pull-to-refresh functionality later
+        onRefresh={mutate} // Enables pull-to-refresh
+        refreshing={isLoading}
       />
     );
   };
@@ -58,7 +65,7 @@ export default function JobsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Welcome, {user?.first_name || 'Driver'}!</Text>
+        <Text style={styles.title} numberOfLines={1}>Welcome, {user?.first_name || 'Driver'}!</Text>
         <Button title="Log Out" onPress={logout} color="#ff3b30" />
       </View>
       <Text style={styles.subtitle}>My Assigned Jobs</Text>
@@ -69,8 +76,8 @@ export default function JobsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0f0f7' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10 },
-  title: { fontSize: 24, fontWeight: 'bold' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 5 },
+  title: { fontSize: 24, fontWeight: 'bold', flexShrink: 1 },
   subtitle: { fontSize: 20, marginBottom: 10, color: '#666', paddingHorizontal: 16 },
   errorText: { textAlign: 'center', color: 'red', marginTop: 20, paddingHorizontal: 16 },
   emptyText: { textAlign: 'center', color: '#666', marginTop: 20, paddingHorizontal: 16 },
@@ -96,9 +103,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignSelf: 'flex-start',
   },
-  statusPENDING: { backgroundColor: '#ff9500' }, // Orange
-  statusIN_TRANSIT: { backgroundColor: '#007aff' }, // Blue
-  statusDELIVERED: { backgroundColor: '#34c759' }, // Green
-  statusFAILED: { backgroundColor: '#ff3b30' }, // Red
+  statusPENDING: { backgroundColor: '#ff9500' },
+  statusIN_TRANSIT: { backgroundColor: '#007aff' },
+  statusDELIVERED: { backgroundColor: '#34c759' },
+  statusFAILED: { backgroundColor: '#ff3b30' },
   statusText: { color: 'white', fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' },
 });

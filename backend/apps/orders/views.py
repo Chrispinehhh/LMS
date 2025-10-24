@@ -1,8 +1,10 @@
+# apps/orders/views.py
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Job
 from .serializers import JobSerializer
-from apps.core.permissions import IsAdminOrManagerUser
+# Import the custom permissions, including the new object-level one
+from apps.core.permissions import IsAdminOrManagerUser, IsOwnerOrAssignedDriverOrAdmin
 from apps.transportation.models import Shipment
 from apps.billing.models import Invoice
 from datetime import date, timedelta
@@ -12,9 +14,28 @@ class JobViewSet(viewsets.ModelViewSet):
     ViewSet for managing Job records.
     It automatically creates a corresponding Shipment and Invoice upon job creation.
     """
-    queryset = Job.objects.all().select_related('customer').order_by('-created_at')
+    # Use select_related for necessary lookups for efficient retrieval and permission checks
+    queryset = Job.objects.all().select_related('customer', 'shipment__driver__user').order_by('-created_at')
     serializer_class = JobSerializer
-    permission_classes = [IsAdminOrManagerUser]
+    
+    # -----------------------------------------------------------------------
+    # 🛑 FIX: Use get_permissions to define permissions per action
+    # -----------------------------------------------------------------------
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action == 'list' or self.action == 'create':
+            # Only Admin or Manager can list all jobs or create new ones via the admin endpoint
+            self.permission_classes = [IsAdminOrManagerUser]
+        elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            # For detail actions, use the object-level permission
+            self.permission_classes = [IsOwnerOrAssignedDriverOrAdmin]
+        else:
+            # Default fallback for any other custom actions
+            self.permission_classes = [IsAuthenticated]
+            
+        return [permission() for permission in self.permission_classes]
 
     def perform_create(self, serializer):
         """
@@ -27,8 +48,6 @@ class JobViewSet(viewsets.ModelViewSet):
         job_instance = serializer.save()
 
         # Now, create the associated Shipment record
-        # Using get_or_create to ensure idempotence, though simple 'create' is fine too
-        # in a well-controlled perform_create environment.
         Shipment.objects.get_or_create(
             job=job_instance,
             defaults={
@@ -39,8 +58,6 @@ class JobViewSet(viewsets.ModelViewSet):
         )
 
         # --- Logic to create the Invoice ---
-
-        # Start with a base fee
         total_amount = 50.00
 
         # Adjust price based on service type
@@ -63,7 +80,10 @@ class JobViewSet(viewsets.ModelViewSet):
         print(f"SUCCESS: Shipment and Invoice created for new job {job_instance.id}.")
 
 
-# --- ADD THIS NEW VIEW ---
+# -----------------------------------------------------------------------
+# --- NEW VIEW: BookingView ---
+# -----------------------------------------------------------------------
+
 class BookingView(generics.CreateAPIView):
     """
     A public-facing view for authenticated customers to create a new job booking.
@@ -82,11 +102,7 @@ class BookingView(generics.CreateAPIView):
         # it to be the currently authenticated user.
         job_instance = serializer.save(customer=self.request.user)
 
-        # The logic for creating Shipments and Invoices will need to be
-        # triggered here as well, or preferably, moved to a signal or the model's
-        # save method to apply to all new Job creations.
-        # For now, let's replicate the logic from the ViewSet.
-
+        # Replicate Shipment creation logic
         Shipment.objects.get_or_create(
             job=job_instance,
             defaults={
@@ -96,6 +112,7 @@ class BookingView(generics.CreateAPIView):
             }
         )
 
+        # Replicate Invoice creation logic
         total_amount = 50.00
         if job_instance.service_type == Job.ServiceType.RESIDENTIAL_MOVING:
             total_amount += 250.00

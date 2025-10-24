@@ -8,15 +8,19 @@ class JobAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Job model.
     """
+    # --- 'status' has been removed from list_display ---
     list_display = (
         'id', 
         'customer', 
-        'status', 
+        'service_type', # It's useful to see the service type here
         'pickup_city', 
         'delivery_city', 
         'requested_pickup_date'
     )
-    list_filter = ('status', 'requested_pickup_date')
+    
+    # --- 'status' has been removed from list_filter ---
+    list_filter = ('service_type', 'requested_pickup_date')
+    
     search_fields = (
         'id', 
         'customer__username', 
@@ -25,13 +29,13 @@ class JobAdmin(admin.ModelAdmin):
         'cargo_description'
     )
     
-    # This makes the customer field a searchable dropdown instead of a giant list
     autocomplete_fields = ['customer']
 
     # Organize the detail view into sections
     fieldsets = (
         ('Job Overview', {
-            'fields': ('customer', 'status', 'cargo_description', 'requested_pickup_date')
+            # --- 'status' has been removed from the fields ---
+            'fields': ('customer', 'service_type', 'cargo_description', 'requested_pickup_date')
         }),
         ('Pickup Information', {
             'fields': ('pickup_address', 'pickup_city', 'pickup_contact_person', 'pickup_contact_phone')
