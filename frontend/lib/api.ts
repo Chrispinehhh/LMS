@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create a new Axios instance
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1', // Your Django backend URL
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001/api/v1', // Your Django backend URL
   headers: {
     'Content-Type': 'application/json',
   },

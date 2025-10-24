@@ -1,41 +1,56 @@
 # logipro_backend/urls_api.py
 
-from django.urls import path
-from core.views import health_check
-from users.views import UserListView
 from django.urls import path, include
+from rest_framework_simplejwt.views import TokenRefreshView
 
-# 1. Import the specific views from the simplejwt library
-from users.views import UserListView, FirebaseLoginView, CurrentUserView, CreateUserView
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
+# Import all views from their respective apps
+from core.views import health_check
+from users.views import (
+    UserListView, 
+    FirebaseLoginView, 
+    CurrentUserView, 
+    CreateUserView,
+    EmailTokenObtainPairView # <-- Our custom view for email login
 )
-
 
 app_name = "api"
 
+# We define URL patterns in logical groups
+auth_patterns = [
+    # For staff (drivers/managers) to log in with email and password
+    path("token/", EmailTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    
+    # For customers to log in via Google/Firebase
+    path("firebase/", FirebaseLoginView.as_view(), name="firebase_login"),
+    
+    # For refreshing an expired access token
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+]
+
+user_patterns = [
+    # For managers to get a list of all users
+    path("", UserListView.as_view(), name="user-list"),
+    
+    # For managers to create new staff users
+    path("create/", CreateUserView.as_view(), name="user-create"),
+    
+    # For any authenticated user to get their own profile details
+    path("me/", CurrentUserView.as_view(), name="user-me"),
+]
+
+
 urlpatterns = [
-    # Core URLs
+    # Core URL
     path("health-check/", health_check, name="health-check"),
-    # Auth URLs
-    path("auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    # Add the new firebase auth URL
-    path("auth/firebase/", FirebaseLoginView.as_view(), name="firebase_login"),
-    # Users URLs
-    path("users/", UserListView.as_view(), name="user-list"),
-     path('users/create/', CreateUserView.as_view(), name='user-create'),
-    # Add the new 'me' user URL
-    path("users/me/", CurrentUserView.as_view(), name="user-me"),
-    # Order URLs
-    path("", include("orders.urls")),
-    # Transportation URLs
-    path("", include("transportation.urls")),
-    # Billing URLs
+    
+    # Include URL groups with a clear prefix
+    path("auth/", include(auth_patterns)),
+    path("users/", include(user_patterns)),
+    
+    # Include URLs from our other apps
+    path("", include("orders.urls")), # Provides /api/v1/jobs/
+    path("", include("transportation.urls")), # Provides /api/v1/vehicles/, /drivers/, /shipments/
     path("billing/", include("billing.urls")),
-    # Notifications URLs
     path("notifications/", include("notifications.urls")),
-    # Reports URLs
     path("reports/", include("reports.urls")),
 ]

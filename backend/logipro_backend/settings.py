@@ -119,7 +119,7 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.models.BigAutoField"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # --- 3. CUSTOM APP & THIRD-PARTY CONFIGURATIONS ---
@@ -147,7 +147,7 @@ SIMPLE_JWT = {
 }
 
 # CORS - Cross-Origin Resource Sharing
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=['http://localhost:3000' , 'http://localhost:3001'])
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 
 # Firebase
 GOOGLE_APPLICATION_CREDENTIALS = env("GOOGLE_APPLICATION_CREDENTIALS")
@@ -166,6 +166,16 @@ TWILIO_PHONE_NUMBER = env("TWILIO_PHONE_NUMBER")
 # --- 4. APPLICATION STARTUP INITIALIZATION ---
 # This code runs once when Django starts up.
 
+# AUTHENTICATION BACKENDS
+# --------------------------------------------------------------------------
+# This tells Django which methods to use when trying to authenticate a user.
+# The default ModelBackend is required for email/password login to work.
+
+AUTHENTICATION_BACKENDS = [
+    'users.backends.EmailBackend',  # <-- Our custom backend for email login
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # We only initialize Firebase if the credentials file is set, to prevent errors.
 if GOOGLE_APPLICATION_CREDENTIALS:
     from apps.core.firebase import initialize_firebase_admin
@@ -174,3 +184,5 @@ if GOOGLE_APPLICATION_CREDENTIALS:
     print("Firebase Admin SDK initialization check complete.")
 else:
     print("WARNING: GOOGLE_APPLICATION_CREDENTIALS not set. Firebase Admin SDK not initialized.")
+
+
