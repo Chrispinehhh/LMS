@@ -1,8 +1,8 @@
 # apps/core/permissions.py
 
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from users.models import User
-from transportation.models import Driver # Import the Driver model
+from apps.users.models import User
+from apps.transportation.models import Driver # Import the Driver model
 
 class IsAdminUser(BasePermission):
     """

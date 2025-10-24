@@ -3,7 +3,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Job
-from transportation.models import Shipment
+from apps.transportation.models import Shipment
 
 @receiver(post_save, sender=Job)
 def create_or_update_shipment_for_job(sender, instance, created, **kwargs):

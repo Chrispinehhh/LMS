@@ -4,7 +4,7 @@ from django.apps import AppConfig
 
 class OrdersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'orders'
+    name = 'apps.orders'
 
     def ready(self):
         """
@@ -12,4 +12,4 @@ class OrdersConfig(AppConfig):
         We import our signals here to ensure they are registered.
         """
         # The following line is crucial for your signals to work.
-        import orders.signals
+        import apps.orders.signals

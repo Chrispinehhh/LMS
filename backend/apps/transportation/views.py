@@ -12,7 +12,7 @@ from .serializers import (
     MyJobsShipmentSerializer
 )
 from .filters import ShipmentFilter 
-from core.permissions import IsDriverUser, IsAdminOrManagerUser
+from apps.core.permissions import IsDriverUser, IsAdminOrManagerUser
 
 class VehicleViewSet(viewsets.ModelViewSet):
     """

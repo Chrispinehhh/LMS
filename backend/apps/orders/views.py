@@ -2,9 +2,9 @@ from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Job
 from .serializers import JobSerializer
-from core.permissions import IsAdminOrManagerUser
-from transportation.models import Shipment
-from billing.models import Invoice
+from apps.core.permissions import IsAdminOrManagerUser
+from apps.transportation.models import Shipment
+from apps.billing.models import Invoice
 from datetime import date, timedelta
 
 class JobViewSet(viewsets.ModelViewSet):

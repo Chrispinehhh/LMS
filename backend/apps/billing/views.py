@@ -5,7 +5,7 @@ from rest_framework import status, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Invoice
-from core.permissions import IsAdminOrManagerUser
+from apps.core.permissions import IsAdminOrManagerUser
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 

@@ -4,10 +4,10 @@ from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate
 from datetime import datetime, timedelta
 
-from core.permissions import IsAdminOrManagerUser
-from orders.models import Job  # <-- Import Job instead of Order
-from transportation.models import Shipment
-from users.models import User
+from apps.core.permissions import IsAdminOrManagerUser
+from apps.orders.models import Job  # <-- Import Job instead of Order
+from apps.transportation.models import Shipment
+from apps.users.models import User
 # REMOVED: from logistics.models import Product # This line is no longer needed
 
 class DashboardSummaryView(views.APIView):

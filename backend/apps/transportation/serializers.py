@@ -2,9 +2,9 @@
 
 from rest_framework import serializers
 from .models import Vehicle, Driver, Shipment
-from users.models import User
-from users.serializers import UserSerializer
-from orders.serializers import JobSerializer
+from apps.users.models import User
+from apps.users.serializers import UserSerializer
+from apps.orders.serializers import JobSerializer
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:

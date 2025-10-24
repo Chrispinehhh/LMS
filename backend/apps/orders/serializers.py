@@ -2,8 +2,8 @@
 
 from rest_framework import serializers
 from .models import Job
-from users.models import User
-from users.serializers import UserSerializer
+from apps.users.models import User
+from apps.users.serializers import UserSerializer
 
 class JobSerializer(serializers.ModelSerializer):
     """

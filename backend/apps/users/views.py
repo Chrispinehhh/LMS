@@ -14,7 +14,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
 from .serializers import UserSerializer, FirebaseTokenSerializer, EmailTokenObtainPairSerializer
-from core.permissions import IsAdminOrManagerUser
+from apps.core.permissions import IsAdminOrManagerUser
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)

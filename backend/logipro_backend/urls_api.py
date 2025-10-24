@@ -4,8 +4,8 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 
 # Import all views from their respective apps
-from core.views import health_check
-from users.views import (
+from apps.core.views import health_check
+from apps.users.views import (
     UserListView, 
     FirebaseLoginView, 
     CurrentUserView, 
@@ -48,9 +48,9 @@ urlpatterns = [
     path("users/", include(user_patterns)),
     
     # Include URLs from our other apps
-    path("", include("orders.urls")), # Provides /api/v1/jobs/
-    path("", include("transportation.urls")), # Provides /api/v1/vehicles/, /drivers/, /shipments/
-    path("billing/", include("billing.urls")),
-    path("notifications/", include("notifications.urls")),
-    path("reports/", include("reports.urls")),
+    path("", include("apps.orders.urls")), # Provides /api/v1/jobs/
+    path("", include("apps.transportation.urls")), # Provides /api/v1/vehicles/, /drivers/, /shipments/
+    path("billing/", include("apps.billing.urls")),
+    path("notifications/", include("apps.notifications.urls")),
+    path("reports/", include("apps.reports.urls")),
 ]

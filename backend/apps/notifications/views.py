@@ -3,7 +3,7 @@ from rest_framework import views, status
 from rest_framework.response import Response
 from .serializers import SMSSerializer
 from .services import send_sms
-from core.permissions import IsAdminUser
+from apps.core.permissions import IsAdminUser
 
 
 class SendTestSMSView(views.APIView):

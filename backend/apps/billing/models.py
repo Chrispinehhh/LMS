@@ -1,8 +1,8 @@
 # apps/billing/models.py
 
 from django.db import models
-from core.models import BaseModel
-from orders.models import Job
+from apps.core.models import BaseModel
+from apps.orders.models import Job
 
 class Invoice(BaseModel):
     class InvoiceStatus(models.TextChoices):
