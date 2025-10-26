@@ -16,10 +16,8 @@ class JobSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    # --- THIS IS THE KEY CHANGE ---
-    # This field is read-only and gets its value from the 'status'
-    # attribute of the related 'shipment' object.
-    status = serializers.CharField(source='shipment.status', read_only=True)
+    # --- IMPROVED VERSION WITH ERROR HANDLING ---
+    status = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Job
@@ -43,3 +41,14 @@ class JobSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['status', 'created_at', 'updated_at']
+
+    def get_status(self, obj):
+        """
+        Get status from related shipment if it exists, otherwise return 'PENDING'
+        """
+        try:
+            if hasattr(obj, 'shipment') and obj.shipment:
+                return obj.shipment.status
+            return 'PENDING'
+        except Exception:
+            return 'PENDING'

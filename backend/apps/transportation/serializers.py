@@ -52,11 +52,11 @@ class ShipmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'job', 'vehicle', 'vehicle_id', 'driver', 'driver_id',
             'status', 'estimated_departure', 'actual_departure',
-            'estimated_arrival', 'actual_arrival'
+            'estimated_arrival', 'actual_arrival',
+            'proof_of_delivery_image'  # CRITICAL: Added this field
         ]
 
 
-# --- THIS IS THE NEW, LIGHTWEIGHT SERIALIZER ---
 class MyJobsShipmentSerializer(serializers.ModelSerializer):
     """
     A lightweight, "flat" serializer for the 'My Assigned Jobs' list.
@@ -70,7 +70,6 @@ class MyJobsShipmentSerializer(serializers.ModelSerializer):
     requested_pickup_date = serializers.DateTimeField(source='job.requested_pickup_date', read_only=True)
     customer_name = serializers.CharField(source='job.customer.get_full_name', read_only=True)
 
-
     class Meta:
         model = Shipment
         # The fields are now a flat structure, which is simple and efficient.
@@ -82,4 +81,5 @@ class MyJobsShipmentSerializer(serializers.ModelSerializer):
             'pickup_address',
             'delivery_address',
             'requested_pickup_date',
+            'proof_of_delivery_image'  # CRITICAL: Added this field
         ]

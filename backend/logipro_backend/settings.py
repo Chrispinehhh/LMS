@@ -7,7 +7,10 @@ import environ
 
 # --- 1. ENVIRONMENT VARIABLE SETUP ---
 env = environ.Env(
-    DEBUG=(bool, False) # Define DEBUG casting and default
+    DEBUG=(bool, False),
+    # Add file upload size limits as environment variables
+    FILE_UPLOAD_MAX_MEMORY_SIZE=(int, 5242880),  # 5MB default
+    DATA_UPLOAD_MAX_MEMORY_SIZE=(int, 5242880),  # 5MB default
 )
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Read the .env file from the backend root
@@ -15,7 +18,6 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 
 # --- 2. CORE DJANGO SETTINGS ---
-# All secrets and environment-specific settings are read from the .env file.
 DEBUG = env('DEBUG')
 SECRET_KEY = env('SECRET_KEY')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
@@ -37,8 +39,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "django_filters",
     
-    # --- THIS IS THE KEY FIX ---
-    # Local (Our) Apps - Using the full dotted path to the AppConfig class
+    # Local (Our) Apps
     "apps.core.apps.CoreConfig",
     "apps.users.apps.UsersConfig",
     "apps.orders.apps.OrdersConfig",
@@ -99,13 +100,22 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- MEDIA FILE CONFIGURATION ---
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# --- FILE UPLOAD CONFIGURATION (ENHANCED) ---
+FILE_UPLOAD_MAX_MEMORY_SIZE = env('FILE_UPLOAD_MAX_MEMORY_SIZE')  # 5MB default
+DATA_UPLOAD_MAX_MEMORY_SIZE = env('DATA_UPLOAD_MAX_MEMORY_SIZE')  # 5MB default
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  # Increase if needed for complex forms
+
 
 # --- 4. CUSTOM APP & THIRD-PARTY CONFIGURATIONS ---
 
-# Custom User Model (must use 'app_label.ModelName' format)
+# Custom User Model
 AUTH_USER_MODEL = "users.User"
 
-# Custom Authentication Backend (must use full Python dotted path)
+# Custom Authentication Backend
 AUTHENTICATION_BACKENDS = [
     'apps.users.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
@@ -113,21 +123,50 @@ AUTHENTICATION_BACKENDS = [
 
 # Django REST Framework
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [ "rest_framework.permissions.IsAuthenticated" ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [ "rest_framework_simplejwt.authentication.JWTAuthentication" ],
-    "DEFAULT_FILTER_BACKENDS": [ 'django_filters.rest_framework.DjangoFilterBackend' ],
+    "DEFAULT_PERMISSION_CLASSES": [ 
+        "rest_framework.permissions.IsAuthenticated" 
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [ 
+        "rest_framework_simplejwt.authentication.JWTAuthentication" 
+    ],
+    "DEFAULT_FILTER_BACKENDS": [ 
+        'django_filters.rest_framework.DjangoFilterBackend' 
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',  # Important for file uploads
+        'rest_framework.parsers.FormParser',
+    ],
+    # Optional: Add pagination
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
 
 # Simple JWT
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # CORS - Cross-Origin Resource Sharing
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
+CORS_ALLOW_CREDENTIALS = True
 
-# Firebase, Stripe, Twilio (read from environment)
+# Add CORS settings for file uploads
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Firebase, Stripe, Twilio
 GOOGLE_APPLICATION_CREDENTIALS = env("GOOGLE_APPLICATION_CREDENTIALS")
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")

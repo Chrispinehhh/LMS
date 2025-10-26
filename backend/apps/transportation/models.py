@@ -1,3 +1,5 @@
+# apps/transportation/models.py
+
 from django.db import models
 from django.conf import settings
 from apps.core.models import BaseModel
@@ -82,6 +84,13 @@ class Shipment(BaseModel):
     actual_departure = models.DateTimeField(null=True, blank=True)
     estimated_arrival = models.DateTimeField(null=True, blank=True)
     actual_arrival = models.DateTimeField(null=True, blank=True)
+
+    # Proof of delivery image field
+    proof_of_delivery_image = models.ImageField(
+        upload_to='proof_of_delivery/', 
+        null=True, 
+        blank=True
+    )
 
     def __str__(self):
         return f"Shipment for Job {self.job.id}"

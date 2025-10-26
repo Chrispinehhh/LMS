@@ -1,6 +1,7 @@
 // frontend/types/index.ts
 
-export interface BackendUser {
+// First, define User interface since BackendUser references it
+export interface User {
   id: string;
   username: string; // This is the Firebase UID
   email: string;
@@ -9,6 +10,9 @@ export interface BackendUser {
   last_name: string;
   customer_type: 'ONE_TIME' | 'REGULAR';
 }
+
+// Alias BackendUser to User for consistency
+export type BackendUser = User;
 
 export interface Vehicle {
   id: string;
@@ -22,16 +26,16 @@ export interface Vehicle {
 
 export interface Driver {
   id: string;
-  user: BackendUser; // Contains the driver's name, email, etc.
+  user: User; // Use User interface instead of BackendUser
   license_number: string;
   phone_number: string;
 }
 
 export interface Job {
   id: string;
-  customer: BackendUser;
+  customer: User; // Use User interface instead of BackendUser
   service_type: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
   cargo_description: string;
   pickup_address: string;
   pickup_city: string;
@@ -44,15 +48,21 @@ export interface Job {
   requested_pickup_date: string; // ISO 8601 date string
   created_at: string;
   updated_at: string;
+  customer_name?: string;  // Added for serialized data
+  customer_email?: string; // Added for serialized data
 }
 
 export interface Shipment {
   id: string;
-  job: string; // The Job ID
+  job: Job; // Changed from string to Job object for better typing
   driver: Driver | null;
   vehicle: Vehicle | null;
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
-  // Add other date fields here if you need to display them
+  proof_of_delivery_image?: string;
+  estimated_departure?: string;
+  actual_departure?: string;
+  estimated_arrival?: string;
+  actual_arrival?: string;
 }
 
 export interface DashboardSummary {
@@ -67,3 +77,15 @@ export interface JobChartData {
   short_date: string;
   jobs: number;
 }
+
+// Response interfaces for paginated endpoints
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+// Use type aliases instead of empty interfaces
+export type JobsResponse = PaginatedResponse<Job>;
+export type ShipmentsResponse = PaginatedResponse<Shipment>;

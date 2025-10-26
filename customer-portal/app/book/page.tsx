@@ -9,29 +9,41 @@ import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+// 💡 REQUIRED IMPORT FOR THE ERROR FIX
+import { AxiosError } from 'axios'; 
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, ArrowRight, Truck, MapPin, CheckCircle, Package, Building2, Home } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Truck, MapPin, CheckCircle, Package, Building2, Home, Calendar } from 'lucide-react';
 import AuthModal from '@/components/Auth/AuthModal';
 
 const bookingSchema = z.object({
   service_type: z.enum(['RESIDENTIAL_MOVING', 'OFFICE_RELOCATION', 'PALLET_DELIVERY', 'SMALL_DELIVERIES']),
   cargo_description: z.string().min(10, "Please provide a more detailed description."),
+  
+  // Pickup fields
   pickup_address: z.string().min(5, "Pickup address is required."),
+  pickup_contact_person: z.string().min(2, { message: "Contact person's name is required." }),
+  pickup_contact_phone: z.string().min(10, { message: "A valid phone number is required." }),
+
+  // Delivery fields
   delivery_address: z.string().min(5, "Delivery address is required."),
+  delivery_contact_person: z.string().min(2, { message: "Contact person's name is required." }),
+  delivery_contact_phone: z.string().min(10, { message: "A valid phone number is required." }),
+  
   requested_pickup_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
     message: "Please select a valid date and time.",
   }),
 });
+
 type BookingFormData = z.infer<typeof bookingSchema>;
 
 const steps = [
   { id: 1, name: 'Service', fields: ['service_type', 'cargo_description'] as const, icon: Package },
-  { id: 2, name: 'Logistics', fields: ['pickup_address', 'delivery_address', 'requested_pickup_date'] as const, icon: MapPin },
+  { id: 2, name: 'Logistics', fields: ['pickup_address', 'pickup_contact_person', 'pickup_contact_phone', 'delivery_address', 'delivery_contact_person', 'delivery_contact_phone', 'requested_pickup_date'] as const, icon: MapPin },
   { id: 3, name: 'Confirm', icon: CheckCircle },
 ];
 
@@ -54,7 +66,11 @@ export default function BookingPage() {
       service_type: undefined,
       cargo_description: "",
       pickup_address: "",
+      pickup_contact_person: "",
+      pickup_contact_phone: "",
       delivery_address: "",
+      delivery_contact_person: "",
+      delivery_contact_phone: "",
       requested_pickup_date: "",
     },
   });
@@ -256,33 +272,53 @@ function Step1ServiceDetails() {
 function Step2Location() {
     return (
         <div className="space-y-6">
-            <GlassFormField name="pickup_address" label="Pickup Address">
-                {(field) => (
-                  <Input 
-                    placeholder="123 Main St, Anytown, USA" 
-                    {...field} 
-                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
-                  />
-                )}
-            </GlassFormField>
-            <GlassFormField name="delivery_address" label="Delivery Address">
-                {(field) => (
-                  <Input 
-                    placeholder="456 Oak Ave, Othertown, USA" 
-                    {...field} 
-                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
-                  />
-                )}
-            </GlassFormField>
-            <GlassFormField name="requested_pickup_date" label="Requested Pickup Date & Time">
-                {(field) => (
-                  <Input 
-                    type="datetime-local" 
-                    {...field} 
-                    className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"
-                  />
-                )}
-            </GlassFormField>
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-4">
+                <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-blue-400" />
+                    Pickup Details
+                </h3>
+                <GlassFormField name="pickup_address" label="Pickup Address">
+                    {(field) => <Input placeholder="123 Main St, Anytown, USA" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                </GlassFormField>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <GlassFormField name="pickup_contact_person" label="Contact Person">
+                        {(field) => <Input placeholder="John Doe" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                    </GlassFormField>
+                    <GlassFormField name="pickup_contact_phone" label="Contact Phone">
+                        {(field) => <Input placeholder="(123) 456-7890" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                    </GlassFormField>
+                </div>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-4">
+                <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-green-400" />
+                    Delivery Details
+                </h3>
+                <GlassFormField name="delivery_address" label="Delivery Address">
+                    {(field) => <Input placeholder="456 Oak Ave, Othertown, USA" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                </GlassFormField>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <GlassFormField name="delivery_contact_person" label="Contact Person">
+                        {(field) => <Input placeholder="Jane Smith" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                    </GlassFormField>
+                    <GlassFormField name="delivery_contact_phone" label="Contact Phone">
+                        {(field) => <Input placeholder="(987) 654-3210" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                    </GlassFormField>
+                </div>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-4">
+                <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-amber-400" />
+                    Schedule
+                </h3>
+                <GlassFormField name="requested_pickup_date" label="Requested Pickup Date & Time">
+                    {(field) => <Input type="datetime-local" {...field} className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 h-12"/>}
+                </GlassFormField>
+            </div>
         </div>
     );
 }
@@ -312,23 +348,63 @@ function Step3Confirm({ price, onLoginRequired }: { price: number | null; onLogi
         
         setIsSubmitting(true);
         try {
+            // Extract cities from addresses (simple implementation)
+            const extractCity = (address: string): string => {
+                const parts = address.split(',');
+                if (parts.length > 1) {
+                    return parts[parts.length - 2]?.trim() || "City";
+                }
+                return "City";
+            };
+
             const jobPayload = {
                 ...values,
                 customer_id: backendUser.id,
-                pickup_city: "City",
-                pickup_contact_person: `${backendUser.first_name} ${backendUser.last_name}`,
-                pickup_contact_phone: 'N/A',
-                delivery_city: "City",
-                delivery_contact_person: "Recipient",
-                delivery_contact_phone: 'N/A',
+                pickup_city: extractCity(values.pickup_address),
+                delivery_city: extractCity(values.delivery_address),
             };
-            console.log('Submitting booking:', jobPayload);
-            await apiClient.post('/book/', jobPayload);
+            
+            console.log('🔍 Full booking payload:', jobPayload);
+            
+            const response = await apiClient.post('/book/', jobPayload);
+            console.log('✅ Booking successful, response:', response.data);
+            
             toast.success("Booking successful! A manager will be in touch shortly.");
             router.push('/');
-        } catch (error) {
-            console.error('Booking error:', error);
-            toast.error("Booking failed. Please try again or contact support.");
+        } catch (error) { // 💡 The 'any' is removed, defaulting to 'unknown'
+            console.error('❌ Full booking error:', error);
+            
+            // Check if the error is an Axios error for structured response handling
+            const axiosError = error as AxiosError;
+            
+            if (axiosError.response) {
+                console.error('❌ Error data:', axiosError.response.data);
+                console.error('❌ Error status:', axiosError.response.status);
+                
+                const errorData = axiosError.response.data;
+                let errorMessage = "Booking failed. Please try again.";
+                
+                // Enhanced type-safe error message extraction
+                if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                } else if (typeof errorData === 'object' && errorData !== null) {
+                    if ('detail' in errorData && typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    } else if ('error' in errorData && typeof errorData.error === 'string') {
+                        errorMessage = errorData.error;
+                    } else if ('non_field_errors' in errorData && Array.isArray(errorData.non_field_errors)) {
+                        errorMessage = errorData.non_field_errors.join(', ');
+                    }
+                }
+                
+                toast.error(errorMessage);
+            } else if (error instanceof Error) {
+                // Handle standard JavaScript/Network errors
+                toast.error(`Request failed: ${error.message}`);
+            } else {
+                // Handle unknown error types
+                toast.error("An unknown error occurred during booking. Please try again.");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -340,7 +416,9 @@ function Step3Confirm({ price, onLoginRequired }: { price: number | null; onLogi
                 <h3 className="text-lg font-bold text-center mb-4">Review Your Details</h3>
                 <p><strong>Service:</strong> <span className="font-medium">{serviceOptions[values.service_type]?.name}</span></p>
                 <p><strong>Pickup:</strong> <span className="font-medium">{values.pickup_address}</span></p>
+                <p><strong>Pickup Contact:</strong> <span className="font-medium">{values.pickup_contact_person} - {values.pickup_contact_phone}</span></p>
                 <p><strong>Delivery:</strong> <span className="font-medium">{values.delivery_address}</span></p>
+                <p><strong>Delivery Contact:</strong> <span className="font-medium">{values.delivery_contact_person} - {values.delivery_contact_phone}</span></p>
                 <p><strong>Date:</strong> <span className="font-medium">{values.requested_pickup_date ? new Date(values.requested_pickup_date).toLocaleString() : ''}</span></p>
             </div>
             <div className="text-center py-4">

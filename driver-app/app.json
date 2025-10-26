@@ -13,7 +13,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.driverapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "The app needs access to your camera to take proof of delivery photos.",
+        "NSPhotoLibraryUsageDescription": "The app needs access to your photos to upload proof of delivery images."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,13 +26,26 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.driverapp",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to upload proof of delivery images.",
+          "cameraPermission": "The app needs access to your camera to take proof of delivery photos."
+        }
+      ]
     ]
   }
 }

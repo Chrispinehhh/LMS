@@ -5,28 +5,27 @@ from django.db.models.functions import TruncDate
 from datetime import datetime, timedelta
 
 from apps.core.permissions import IsAdminOrManagerUser
-from apps.orders.models import Job  # <-- Import Job instead of Order
+from apps.orders.models import Job
 from apps.transportation.models import Shipment
 from apps.users.models import User
-# REMOVED: from logistics.models import Product # This line is no longer needed
 
 class DashboardSummaryView(views.APIView):
     """
     Provides a high-level summary of key metrics for the dashboard.
-    Updated to use the Job model.
+    Updated to use the Job model and shipment status.
     """
     permission_classes = [IsAdminOrManagerUser]
 
     def get(self, request, *args, **kwargs):
         total_customers = User.objects.filter(role=User.Role.CUSTOMER).count()
-        total_jobs = Job.objects.count()  # <-- Changed from total_orders
+        total_jobs = Job.objects.count()
         shipments_in_transit = Shipment.objects.filter(status=Shipment.ShipmentStatus.IN_TRANSIT).count()
 
-        # Calculate revenue for the last 30 days from COMPLETED jobs
+        # Calculate revenue for the last 30 days from DELIVERED shipments
         thirty_days_ago = datetime.now() - timedelta(days=30)
         recent_sales = Job.objects.filter(
-            status=Job.JobStatus.COMPLETED,
-            # We assume the completion date is related to the shipment's actual_arrival
+            # Use shipment status instead of job status
+            shipment__status=Shipment.ShipmentStatus.DELIVERED,
             shipment__actual_arrival__gte=thirty_days_ago
         ).aggregate(
             total_revenue=Sum('invoice__total_amount')
@@ -34,10 +33,9 @@ class DashboardSummaryView(views.APIView):
 
         summary_data = {
             'total_customers': total_customers,
-            'total_jobs': total_jobs,  # <-- Changed from total_orders
+            'total_jobs': total_jobs,
             'shipments_in_transit': shipments_in_transit,
             'recent_revenue_30d': f"{recent_sales:.2f}",
-            # 'total_products' is no longer relevant to this business model
         }
 
         return Response(summary_data, status=status.HTTP_200_OK)
@@ -59,7 +57,7 @@ class RecentJobsChartView(views.APIView):
         
         # Query jobs, group by date, and count them
         jobs_by_day = Job.objects.filter(
-            created_at__gte=start_date  # Use created_at from BaseModel
+            created_at__gte=start_date
         ).annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(
@@ -76,22 +74,23 @@ class RecentJobsChartView(views.APIView):
             chart_data.append({
                 'date': date_str,
                 'short_date': date.strftime('%b %d'), 
-                'jobs': date_map.get(date_str, 0) # <-- Changed to 'jobs'
+                'jobs': date_map.get(date_str, 0)
             })
 
         return Response(chart_data, status=status.HTTP_200_OK)
 
 class JobStatusReportView(views.APIView):
     """
-    Provides a report on job counts and revenue grouped by status.
+    Provides a report on job counts and revenue grouped by shipment status.
     Renamed from SalesReportView.
     """
     permission_classes = [IsAdminOrManagerUser]
 
     def get(self, request, *args, **kwargs):
-        jobs_by_status = Job.objects.values('status').annotate(
+        # Group by shipment status instead of job status
+        jobs_by_status = Job.objects.values('shipment__status').annotate(
             job_count=Count('id'),
             total_revenue=Sum('invoice__total_amount')
-        ).order_by('status')
+        ).order_by('shipment__status')
 
         return Response(jobs_by_status, status=status.HTTP_200_OK)

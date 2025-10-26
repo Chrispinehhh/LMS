@@ -3,13 +3,24 @@ import React from 'react';
 import { View, Text, Button, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { ShipmentListItem } from '../types';
+import { JobDetail } from '../types'; // Updated import
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'; // Fixed import
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 // Type for our navigation prop
 type JobsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Jobs'>;
+
+// Define the ShipmentListItem type since it's not exported from types
+interface ShipmentListItem {
+  id: string;
+  job_id: string;
+  pickup_address: string;
+  delivery_address: string;
+  requested_pickup_date: string;
+  customer_name: string;
+  status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
+}
 
 const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () => void }) => (
   <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
@@ -21,15 +32,32 @@ const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () =>
       </Text>
       <Text style={styles.itemCustomer}>Customer: {item.customer_name}</Text>
     </View>
-    <View style={[styles.statusBadge, styles[`status${item.status}`]]}>
+    <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
       <Text style={styles.statusText}>{item.status.replace('_', ' ')}</Text>
     </View>
   </TouchableOpacity>
 );
 
+// Helper function to get status styles
+const getStatusStyle = (status: ShipmentListItem['status']) => {
+  switch (status) {
+    case 'PENDING':
+      return styles.statusPENDING;
+    case 'IN_TRANSIT':
+      return styles.statusIN_TRANSIT;
+    case 'DELIVERED':
+      return styles.statusDELIVERED;
+    case 'FAILED':
+      return styles.statusFAILED;
+    default:
+      return styles.statusPENDING;
+  }
+};
+
 export default function JobsScreen() {
   const { user, logout } = useAuth();
-  const { data: assignedJobs, error, isLoading, mutate } = useApi<ShipmentListItem[]>('/drivers/me/jobs/');
+  // UPDATED: Added '/transportation/' prefix to the API endpoint
+  const { data: assignedJobs, error, isLoading, mutate } = useApi<ShipmentListItem[]>('/transportation/drivers/me/jobs/');
   const navigation = useNavigation<JobsScreenNavigationProp>();
 
   const renderContent = () => {
@@ -76,7 +104,14 @@ export default function JobsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0f0f7' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 5 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    paddingTop: 10, 
+    paddingBottom: 5 
+  },
   title: { fontSize: 24, fontWeight: 'bold', flexShrink: 1 },
   subtitle: { fontSize: 20, marginBottom: 10, color: '#666', paddingHorizontal: 16 },
   errorText: { textAlign: 'center', color: 'red', marginTop: 20, paddingHorizontal: 16 },
