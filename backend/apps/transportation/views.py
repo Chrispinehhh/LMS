@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.utils import timezone
 
 from .models import Vehicle, Driver, Shipment
 from .serializers import (
@@ -79,46 +81,94 @@ class ShipmentViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         """
-        Custom permissions:
-        - Anyone can list/retrieve shipments
-        - Drivers can upload POD and update their own shipments
-        - Only admins/managers can create/delete shipments
+        FIXED PERMISSIONS:
+        - Safe methods (GET, HEAD, OPTIONS): AllowAny for tracking
+        - Unsafe methods (POST, PUT, PATCH, DELETE): Admin/Manager only
+        - Custom actions have their own specific permissions
         """
-        if self.action in ['list', 'retrieve']:
+        print(f"🔐 PERMISSIONS: Action: {self.action}, Method: {self.request.method}")
+        
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            # Allow anyone to view shipments (for tracking)
             self.permission_classes = [AllowAny]
-        elif self.action in ['upload_pod', 'partial_update', 'update', 'mark_delivered']:
-            # Allow drivers to upload POD and update their shipments
+            print("🔐 PERMISSIONS: Using AllowAny for safe method")
+        elif self.action in ['upload_pod', 'mark_delivered', 'start_trip']:
+            # Only drivers can upload POD, mark delivered, and start trips
             self.permission_classes = [IsDriverUser]
+            print("🔐 PERMISSIONS: Using IsDriverUser for driver actions")
         else:
+            # All other actions (create, update, partial_update, delete) require admin/manager
             self.permission_classes = [IsAdminOrManagerUser]
+            print("🔐 PERMISSIONS: Using IsAdminOrManagerUser for admin actions")
         return super().get_permissions()
     
     filter_backends = [DjangoFilterBackend]
     filterset_class = ShipmentFilter
-    
-    def partial_update(self, request, *args, **kwargs):
-        """
-        Handle PATCH requests with debugging and security checks
-        """
-        print(f"🔧 DEBUG: PATCH request for shipment {kwargs.get('pk')}")
-        print(f"🔧 DEBUG: Request data: {request.data}")
-        print(f"🔧 DEBUG: User: {request.user.id}, has driver profile: {hasattr(request.user, 'driver_profile')}")
-        
-        # Get the shipment first to check permissions
-        shipment = self.get_object()
-        print(f"🔧 DEBUG: Shipment driver: {shipment.driver}, Request user: {request.user}")
-        
-        # Security check for drivers
-        if hasattr(request.user, 'driver_profile'):
+
+    # ADD THIS METHOD - Simple status update for drivers
+    def update_status(self, request, pk=None, new_status=None):
+        """Helper method to update shipment status"""
+        try:
+            shipment = self.get_object()
+            print(f"🔄 STATUS UPDATE: Shipment {shipment.id}, User: {request.user.id}, New Status: {new_status}")
+            
+            # Security check - drivers can only update their own shipments
             if shipment.driver is None or shipment.driver.user != request.user:
-                print("🔧 DEBUG: Permission denied - user not assigned to this shipment")
                 return Response(
-                    {"error": "You can only update your own shipments."},
+                    {"error": "You are not authorized to update this shipment."},
                     status=status.HTTP_403_FORBIDDEN
                 )
-        
-        print(f"🔧 DEBUG: Permission granted, updating shipment {shipment.id}")
-        return super().partial_update(request, *args, **kwargs)
+
+            # Validate status transition
+            valid_transitions = {
+                'ASSIGNED': ['IN_TRANSIT'],
+                'IN_TRANSIT': ['DELIVERED', 'FAILED'],
+            }
+            
+            current_status = shipment.status
+            if current_status in valid_transitions and new_status not in valid_transitions[current_status]:
+                return Response(
+                    {"error": f"Cannot transition from {current_status} to {new_status}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Update status
+            shipment.status = new_status
+            if new_status == 'IN_TRANSIT':
+                shipment.actual_departure = timezone.now()
+            elif new_status == 'DELIVERED':
+                shipment.actual_arrival = timezone.now()
+                
+            shipment.save()
+
+            print(f"✅ STATUS UPDATE: Successfully updated shipment {shipment.id} to {new_status}")
+
+            # Re-serialize the object
+            serializer = self.get_serializer(shipment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Shipment.DoesNotExist:
+            return Response({"error": "Shipment not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(f"💥 STATUS UPDATE: Error: {str(e)}")
+            return Response(
+                {"error": f"Failed to update shipment: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(
+        detail=True, 
+        methods=['post'], 
+        url_path='start-trip',
+        permission_classes=[IsDriverUser]
+    )
+    def start_trip(self, request, pk=None):
+        """
+        Custom action for a driver to start a trip.
+        Accessible at /api/v1/transportation/shipments/{pk}/start-trip/
+        """
+        print(f"🚛 START TRIP: Request received for shipment {pk}")
+        return self.update_status(request, pk, 'IN_TRANSIT')
     
     @action(
         detail=True, 
@@ -138,7 +188,7 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         except Shipment.DoesNotExist:
             return Response({"error": "Shipment not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Security check
+        # Security check - drivers can only update their own shipments
         if shipment.driver is None or shipment.driver.user != request.user:
             return Response(
                 {"error": "You are not authorized to upload a POD for this shipment."},
@@ -213,7 +263,8 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         try:
             # Update the proof of delivery image and status
             shipment.proof_of_delivery_image = image_file
-            shipment.status = Shipment.ShipmentStatus.DELIVERED
+            shipment.status = 'DELIVERED'
+            shipment.actual_arrival = timezone.now()  # Record arrival time
             shipment.save()
 
             print(f"🎉 DEBUG: Successfully updated shipment {shipment.id} to DELIVERED")
@@ -243,34 +294,79 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         Custom action to mark a shipment as delivered without uploading a photo.
         Accessible at /api/v1/transportation/shipments/{pk}/mark-delivered/
         """
+        print(f"📦 MARK DELIVERED: Request received for shipment {pk}")
+        return self.update_status(request, pk, 'DELIVERED')
+    
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Handle PATCH requests with debugging and security checks
+        """
+        print("🔧 VIEWSET: ===== PATCH REQUEST RECEIVED =====")
+        print(f"🔧 VIEWSET: Shipment ID: {kwargs.get('pk')}")
+        print(f"🔧 VIEWSET: Request data: {request.data}")
+        print(f"🔧 VIEWSET: User: {request.user.id}, Role: {getattr(request.user, 'role', 'Unknown')}")
+        
         try:
+            # Get the shipment instance
             shipment = self.get_object()
-            print(f"📦 DEBUG: Marking shipment {shipment.id} as delivered without photo")
-            print(f"📦 DEBUG: User: {request.user.id}, Shipment driver: {shipment.driver}")
-        except Shipment.DoesNotExist:
-            return Response({"error": "Shipment not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Security check
-        if shipment.driver is None or shipment.driver.user != request.user:
-            return Response(
-                {"error": "You are not authorized to update this shipment."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        try:
-            # Update the status to DELIVERED
-            shipment.status = Shipment.ShipmentStatus.DELIVERED
-            shipment.save()
-
-            print(f"✅ DEBUG: Successfully marked shipment {shipment.id} as DELIVERED")
-
-            # Re-serialize the object
-            serializer = self.get_serializer(shipment)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            print(f"🔧 VIEWSET: Found shipment: {shipment.id}")
+            print(f"🔧 VIEWSET: Current state - Driver: {shipment.driver}, Vehicle: {shipment.vehicle}, Status: {shipment.status}")
             
+            print("🔧 VIEWSET: Permission granted, processing update...")
+            
+            # Create a clean copy of request data
+            request_data = request.data.copy()
+            print(f"🔧 VIEWSET: Original request data keys: {list(request_data.keys())}")
+            
+            # Remove status from request data to prevent conflicts - let serializer handle it
+            if 'status' in request_data:
+                print("🔧 VIEWSET: Removing 'status' from request data - will be handled automatically")
+                del request_data['status']
+            
+            # Handle None values properly - convert string "None" to actual None
+            for field in ['driver_id', 'vehicle_id']:
+                if field in request_data:
+                    if request_data[field] == 'None' or request_data[field] == '':
+                        print(f"🔧 VIEWSET: Converting {field} from '{request_data[field]}' to actual None")
+                        request_data[field] = None
+                    else:
+                        print(f"🔧 VIEWSET: {field} value: {request_data[field]} (type: {type(request_data[field])})")
+            
+            print(f"🔧 VIEWSET: Processing data after cleanup: {request_data}")
+            
+            # Initialize serializer with the cleaned data
+            serializer = self.get_serializer(
+                shipment, 
+                data=request_data, 
+                partial=True
+            )
+            
+            print("🔧 VIEWSET: About to validate serializer...")
+            
+            # Manually call is_valid to see what happens
+            is_valid = serializer.is_valid()
+            print(f"🔧 VIEWSET: Serializer is_valid() returned: {is_valid}")
+            
+            if not is_valid:
+                print("❌ VIEWSET: Serializer validation failed!")
+                print(f"❌ VIEWSET: Validation errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            print("🔧 VIEWSET: Serializer is valid, proceeding with update...")
+            
+            # Perform the update within a transaction
+            with transaction.atomic():
+                updated_instance = serializer.save()
+                print(f"✅ VIEWSET: Update completed successfully for shipment {updated_instance.id}")
+                
+            # Return the serialized data
+            return Response(serializer.data)
+                
         except Exception as e:
-            print(f"💥 DEBUG: Error marking shipment as delivered: {str(e)}")
+            print(f"❌ VIEWSET: Unexpected error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
-                {"error": f"Failed to update shipment: {str(e)}"},
+                {"detail": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

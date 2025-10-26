@@ -37,24 +37,8 @@ export default function JobDetailScreen() {
   const [isUploading, setIsUploading] = React.useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
 
-  const markAsDelivered = async () => {
-    if (isUpdatingStatus) return;
-
-    setIsUpdatingStatus(true);
-    
-    try {
-      const response = await apiClient.post(`/transportation/shipments/${shipmentId}/mark-delivered/`, {});
-      
-      Alert.alert("Success", "Job has been marked as delivered!");
-      mutate();
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || "Failed to update status. Please try again.";
-      Alert.alert("Error", errorMessage);
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
+  // Type assertion to include ASSIGNED status
+  const status = job?.status as 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | undefined;
 
   const startTrip = async () => {
     if (isUpdatingStatus) return;
@@ -62,15 +46,60 @@ export default function JobDetailScreen() {
     setIsUpdatingStatus(true);
     
     try {
-      await apiClient.patch(`/transportation/shipments/${shipmentId}/`, { 
-        status: 'IN_TRANSIT' 
-      });
+      console.log(`Starting trip for shipment: ${shipmentId}`);
       
-      Alert.alert("Success", "Trip started!");
+      // Use the custom action endpoint
+      const response = await apiClient.post(`/transportation/shipments/${shipmentId}/start-trip/`, {});
+      
+      console.log('Start trip response:', response.data);
+      Alert.alert("Success", "Trip started successfully!");
       mutate();
       
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || "Failed to start trip. Please try again.";
+      console.error('Start trip error:', err);
+      console.error('Error response:', err.response?.data);
+      
+      // If custom action fails, try direct PATCH as fallback
+      if (err.response?.status === 404) {
+        console.log('Custom action not found, trying direct PATCH...');
+        try {
+          await apiClient.patch(`/transportation/shipments/${shipmentId}/`, {
+            status: 'IN_TRANSIT'
+          });
+          Alert.alert("Success", "Trip started successfully!");
+          mutate();
+        } catch (patchErr: any) {
+          const patchErrorMessage = patchErr.response?.data?.error || patchErr.response?.data?.detail || "Failed to start trip.";
+          Alert.alert("Error", `Start trip failed: ${patchErrorMessage}`);
+        }
+      } else {
+        const errorMessage = err.response?.data?.error || err.response?.data?.detail || "Failed to start trip. Please try again.";
+        Alert.alert("Error", errorMessage);
+      }
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const markAsDelivered = async () => {
+    if (isUpdatingStatus) return;
+
+    setIsUpdatingStatus(true);
+    
+    try {
+      console.log(`Marking as delivered for shipment: ${shipmentId}`);
+      
+      const response = await apiClient.post(`/transportation/shipments/${shipmentId}/mark-delivered/`, {});
+      
+      console.log('Mark delivered response:', response.data);
+      Alert.alert("Success", "Job has been marked as delivered!");
+      mutate();
+      
+    } catch (err: any) {
+      console.error('Mark delivered error:', err);
+      console.error('Error response:', err.response?.data);
+      
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || "Failed to update status. Please try again.";
       Alert.alert("Error", errorMessage);
     } finally {
       setIsUpdatingStatus(false);
@@ -141,46 +170,81 @@ export default function JobDetailScreen() {
   };
 
   if (isLoading) {
-    return <ActivityIndicator size="large" color="#007aff" style={{ flex: 1, justifyContent: 'center' }} />;
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading job details...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
-  if (error || !job) {
-    return <View style={styles.container}><Text style={styles.errorText}>Failed to load job details.</Text></View>;
+  
+  if (error || !job || !status) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Failed to load job details.</Text>
+          <Text style={styles.errorSubtext}>Please check your connection and try again.</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.scrollView}>
         {/* Status Header */}
         <View style={[styles.statusHeader, 
-          job.status === 'PENDING' && styles.statusPending,
-          job.status === 'IN_TRANSIT' && styles.statusInTransit,
-          job.status === 'DELIVERED' && styles.statusDelivered,
-          job.status === 'FAILED' && styles.statusFailed
+          status === 'PENDING' && styles.statusPending,
+          status === 'ASSIGNED' && styles.statusAssigned,
+          status === 'IN_TRANSIT' && styles.statusInTransit,
+          status === 'DELIVERED' && styles.statusDelivered,
+          status === 'FAILED' && styles.statusFailed
         ]}>
-          <Text style={styles.statusText}>
-            {job.status.replace('_', ' ')}
-          </Text>
+          <View style={styles.statusContent}>
+            <Text style={styles.statusLabel}>CURRENT STATUS</Text>
+            <Text style={styles.statusText}>
+              {status.replace('_', ' ')}
+            </Text>
+          </View>
         </View>
 
         {/* Job Information */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Job Details</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Job Details</Text>
+            <View style={styles.jobIdBadge}>
+              <Text style={styles.jobIdText}>#{jobId}</Text>
+            </View>
+          </View>
           <InfoBlock label="Service Type" value={job.service_type?.replace(/_/g, ' ')} />
           <InfoBlock label="Cargo Description" value={job.cargo_description} />
         </View>
 
+        {/* Route Information */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pickup</Text>
-          <InfoBlock label="Address" value={`${job.pickup_address}, ${job.pickup_city}`} />
-          <InfoBlock label="Contact" value={job.pickup_contact_person} />
-          <InfoBlock label="Phone" value={job.pickup_contact_phone} />
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Delivery</Text>
-          <InfoBlock label="Address" value={`${job.delivery_address}, ${job.delivery_city}`} />
-          <InfoBlock label="Contact" value={job.delivery_contact_person} />
-          <InfoBlock label="Phone" value={job.delivery_contact_phone} />
+          <Text style={styles.cardTitle}>Route Information</Text>
+          <View style={styles.routeContainer}>
+            <View style={styles.routeDot}>
+              <View style={styles.dot} />
+              <View style={styles.verticalLine} />
+            </View>
+            <View style={styles.routeAddresses}>
+              <View style={styles.addressSection}>
+                <Text style={styles.addressLabel}>PICKUP LOCATION</Text>
+                <Text style={styles.addressText}>{job.pickup_address}, {job.pickup_city}</Text>
+                <InfoBlock label="Contact" value={job.pickup_contact_person} />
+                <InfoBlock label="Phone" value={job.pickup_contact_phone} />
+              </View>
+              <View style={styles.addressSection}>
+                <Text style={styles.addressLabel}>DELIVERY LOCATION</Text>
+                <Text style={styles.addressText}>{job.delivery_address}, {job.delivery_city}</Text>
+                <InfoBlock label="Contact" value={job.delivery_contact_person} />
+                <InfoBlock label="Phone" value={job.delivery_contact_phone} />
+              </View>
+            </View>
+          </View>
         </View>
 
         {/* Proof of Delivery Section */}
@@ -189,28 +253,35 @@ export default function JobDetailScreen() {
             <Text style={styles.cardTitle}>Proof of Delivery</Text>
             <Image source={{ uri: capturedImage }} style={styles.podImage} />
             <View style={styles.podActions}>
-              <Button 
-                title="Retake" 
+              <TouchableOpacity 
+                style={[styles.podButton, styles.retakeButton]}
                 onPress={handleRetakePhoto} 
-                color="#8e8e93"
                 disabled={isUploading}
-              />
-              <Button 
-                title={isUploading ? "Uploading..." : "Upload"} 
+              >
+                <Text style={styles.retakeButtonText}>Retake</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.podButton, styles.uploadButton]}
                 onPress={handleUploadPhoto} 
-                color="#34c759"
                 disabled={isUploading}
-              />
-              <Button 
-                title="Cancel" 
+              >
+                {isUploading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.uploadButtonText}>Upload</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.podButton, styles.cancelButton]}
                 onPress={handleCancelUpload} 
-                color="#ff3b30"
                 disabled={isUploading}
-              />
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
             {isUploading && (
               <View style={styles.uploadingContainer}>
-                <ActivityIndicator size="small" color="#007aff" />
+                <ActivityIndicator size="small" color="#3B82F6" />
                 <Text style={styles.uploadingText}>Uploading...</Text>
               </View>
             )}
@@ -224,15 +295,17 @@ export default function JobDetailScreen() {
               source={{ uri: job.proof_of_delivery_image }} 
               style={styles.podImage}
             />
-            <Text style={styles.uploadedText}>✓ Delivered with photo</Text>
+            <View style={styles.uploadedContainer}>
+              <Text style={styles.uploadedText}>✓ Delivered with photo</Text>
+            </View>
           </View>
         )}
         
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-            {job.status === 'PENDING' && (
+            {status === 'ASSIGNED' && (
                 <TouchableOpacity 
-                  style={styles.actionButton}
+                  style={[styles.actionButton, styles.startTripButton]}
                   onPress={startTrip}
                   disabled={isUpdatingStatus}
                 >
@@ -244,13 +317,13 @@ export default function JobDetailScreen() {
                 </TouchableOpacity>
             )}
 
-            {job.status === 'IN_TRANSIT' && !capturedImage && (
+            {status === 'IN_TRANSIT' && !capturedImage && (
               <View style={styles.inTransitActions}>
                 <TouchableOpacity 
                   style={[styles.actionButton, styles.photoButton]}
                   onPress={handleTakePhoto}
                 >
-                  <Text style={styles.actionButtonText}>Take Delivery Photo</Text>
+                  <Text style={styles.actionButtonText}>📸 Take Delivery Photo</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
@@ -261,190 +334,382 @@ export default function JobDetailScreen() {
                   {isUpdatingStatus ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
-                    <Text style={styles.actionButtonText}>Mark as Delivered</Text>
+                    <Text style={styles.actionButtonText}>🚚 Mark as Delivered</Text>
                   )}
                 </TouchableOpacity>
               </View>
             )}
 
-            {job.status === 'DELIVERED' && (
-                <View style={styles.completedSection}>
-                  <Text style={styles.completedText}>✓ Delivery Completed</Text>
+            {status === 'DELIVERED' && (
+                <View style={[styles.statusSection, styles.completedSection]}>
+                  <Text style={styles.completedIcon}>✓</Text>
+                  <Text style={styles.completedText}>Delivery Completed</Text>
+                  <Text style={styles.completedSubtext}>Great job! Delivery has been successfully completed.</Text>
                 </View>
             )}
 
-            {job.status === 'FAILED' && (
-                <View style={styles.failedSection}>
+            {status === 'FAILED' && (
+                <View style={[styles.statusSection, styles.failedSection]}>
+                  <Text style={styles.failedIcon}>⚠️</Text>
                   <Text style={styles.failedText}>Delivery Failed</Text>
-                  <Text style={styles.failedSubtext}>Please contact dispatch</Text>
+                  <Text style={styles.failedSubtext}>Please contact dispatch for assistance</Text>
                 </View>
             )}
         </View>
+
+        <View style={styles.footerSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#f8f9fa' 
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#f8fafc',
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#ef4444',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  // Status Header
+  statusHeader: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    statusHeader: {
-        padding: 20,
-        marginHorizontal: 16,
-        marginTop: 16,
-        borderRadius: 12,
-        alignItems: 'center',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  statusContent: {
+    alignItems: 'center',
+  },
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  statusText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statusPending: {
+    backgroundColor: '#ffedd5',
+    borderLeftWidth: 4,
+    borderLeftColor: '#f59e0b',
+  },
+  statusAssigned: {
+    backgroundColor: '#dbeafe',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3b82f6',
+  },
+  statusInTransit: {
+    backgroundColor: '#dbeafe',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3b82f6',
+  },
+  statusDelivered: {
+    backgroundColor: '#dcfce7',
+    borderLeftWidth: 4,
+    borderLeftColor: '#16a34a',
+  },
+  statusFailed: {
+    backgroundColor: '#fee2e2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc2626',
+  },
+  // Cards
+  card: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    statusPending: { 
-        backgroundColor: '#fff3cd',
-        borderColor: '#ffeaa7',
-        borderWidth: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  jobIdBadge: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  jobIdText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  // Info Blocks
+  infoBlock: {
+    marginVertical: 8,
+  },
+  label: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  value: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1e293b',
+    lineHeight: 22,
+  },
+  // Route Information
+  routeContainer: {
+    flexDirection: 'row',
+  },
+  routeDot: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#3B82F6',
+  },
+  verticalLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#e2e8f0',
+    marginVertical: 8,
+  },
+  routeAddresses: {
+    flex: 1,
+  },
+  addressSection: {
+    marginBottom: 20,
+  },
+  addressLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  addressText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  // Proof of Delivery
+  podImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginVertical: 12,
+  },
+  podActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 8,
+  },
+  podButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retakeButton: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  retakeButtonText: {
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  uploadButton: {
+    backgroundColor: '#3B82F6',
+  },
+  uploadButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: '#ef4444',
+  },
+  cancelButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  uploadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+  },
+  uploadingText: {
+    marginLeft: 8,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  uploadedContainer: {
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#dcfce7',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  uploadedText: {
+    color: '#16a34a',
+    fontWeight: '600',
+  },
+  // Action Buttons
+  actionsContainer: {
+    padding: 16,
+    marginTop: 8,
+  },
+  inTransitActions: {
+    gap: 12,
+  },
+  actionButton: {
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    statusInTransit: { 
-        backgroundColor: '#d1ecf1',
-        borderColor: '#bee5eb',
-        borderWidth: 1,
-    },
-    statusDelivered: { 
-        backgroundColor: '#d4edda',
-        borderColor: '#c3e6cb',
-        borderWidth: 1,
-    },
-    statusFailed: { 
-        backgroundColor: '#f8d7da',
-        borderColor: '#f5c6cb',
-        borderWidth: 1,
-    },
-    statusText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#000',
-    },
-    card: { 
-        backgroundColor: 'white', 
-        borderRadius: 12, 
-        padding: 16, 
-        marginHorizontal: 16, 
-        marginVertical: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
-    },
-    cardTitle: { 
-        fontSize: 16, 
-        fontWeight: 'bold', 
-        marginBottom: 12,
-        color: '#2c3e50',
-    },
-    infoBlock: { 
-        marginVertical: 4 
-    },
-    label: { 
-        fontSize: 14, 
-        color: '#7f8c8d',
-        fontWeight: '500',
-    },
-    value: { 
-        fontSize: 16, 
-        fontWeight: '400', 
-        marginTop: 2, 
-        color: '#2c3e50' 
-    },
-    actionsContainer: { 
-        padding: 16, 
-        marginTop: 8 
-    },
-    inTransitActions: {
-        gap: 12,
-    },
-    actionButton: {
-        backgroundColor: '#007aff',
-        padding: 16,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    photoButton: {
-        backgroundColor: '#34c759',
-    },
-    deliverButton: {
-        backgroundColor: '#007aff',
-    },
-    actionButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    // Proof of Delivery Styles
-    podImage: {
-        width: '100%',
-        height: 200,
-        borderRadius: 8,
-        marginVertical: 8,
-    },
-    podActions: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 12,
-        gap: 8,
-    },
-    uploadingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 12,
-        padding: 8,
-    },
-    uploadingText: {
-        marginLeft: 8,
-        color: '#007aff',
-        fontWeight: '500',
-    },
-    uploadedText: {
-        textAlign: 'center',
-        color: '#34c759',
-        fontWeight: '500',
-        marginTop: 8,
-    },
-    completedSection: {
-        backgroundColor: '#d4edda',
-        padding: 20,
-        borderRadius: 10,
-        alignItems: 'center',
-        borderColor: '#c3e6cb',
-        borderWidth: 1,
-    },
-    completedText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#155724',
-    },
-    failedSection: {
-        backgroundColor: '#f8d7da',
-        padding: 20,
-        borderRadius: 10,
-        alignItems: 'center',
-        borderColor: '#f5c6cb',
-        borderWidth: 1,
-    },
-    failedText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#721c24',
-    },
-    failedSubtext: {
-        fontSize: 14,
-        color: '#721c24',
-        marginTop: 4,
-    },
-    errorText: { 
-        textAlign: 'center', 
-        color: '#dc3545', 
-        marginTop: 20,
-        fontSize: 16,
-    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  startTripButton: {
+    backgroundColor: '#3B82F6',
+  },
+  photoButton: {
+    backgroundColor: '#10b981',
+  },
+  deliverButton: {
+    backgroundColor: '#3B82F6',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Status Sections
+  statusSection: {
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginHorizontal: 16,
+  },
+  completedSection: {
+    backgroundColor: '#dcfce7',
+    borderLeftWidth: 4,
+    borderLeftColor: '#16a34a',
+  },
+  completedIcon: {
+    fontSize: 32,
+    color: '#16a34a',
+    marginBottom: 8,
+  },
+  completedText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#166534',
+    marginBottom: 4,
+  },
+  completedSubtext: {
+    fontSize: 14,
+    color: '#166534',
+    textAlign: 'center',
+  },
+  failedSection: {
+    backgroundColor: '#fee2e2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc2626',
+  },
+  failedIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  failedText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#991b1b',
+    marginBottom: 4,
+  },
+  failedSubtext: {
+    fontSize: 14,
+    color: '#991b1b',
+    textAlign: 'center',
+  },
+  footerSpacer: {
+    height: 24,
+  },
 });

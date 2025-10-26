@@ -7,9 +7,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # All API endpoints are included via urls_api.py
     path("api/v1/", include("logipro_backend.urls_api", namespace="api")),
-    # Transportation app URLs will be available at /api/v1/transportation/
-    path("api/v1/transportation/", include("apps.transportation.urls")),
+    # Transportation app URLs are now ONLY available through urls_api.py at /api/v1/transportation/
 ]
 
 if settings.DEBUG:

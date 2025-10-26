@@ -9,6 +9,8 @@ export interface User {
   first_name: string;
   last_name: string;
   customer_type: 'ONE_TIME' | 'REGULAR';
+  is_active?: boolean;
+  phone_number?: string;
 }
 
 // Alias BackendUser to User for consistency
@@ -57,7 +59,7 @@ export interface Shipment {
   job: Job; // Changed from string to Job object for better typing
   driver: Driver | null;
   vehicle: Vehicle | null;
-  status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
+  status: 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
   proof_of_delivery_image?: string;
   estimated_departure?: string;
   actual_departure?: string;
