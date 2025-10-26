@@ -3,7 +3,7 @@
 
 import { useParams } from 'next/navigation';
 import { useApi } from '@/hooks/useApi';
-import { Shipment, Job } from '@/types';
+import { Shipment } from '@/types';
 import { Truck, PackageCheck, AlertCircle, Hourglass, Clock, User, CheckCircle2 } from 'lucide-react';
 import React from 'react';
 
@@ -49,6 +49,15 @@ const StatusStep = ({ icon: Icon, title, description, isActive, isCompleted }: {
   </div>
 );
 
+// Define a basic Job interface locally since it's not exported from types
+interface BasicJob {
+  id: string;
+  status: string;
+  service_type?: string;
+  requested_pickup_date?: string;
+  cargo_description?: string;
+}
+
 export default function TrackingDetailPage() {
   const params = useParams();
   const jobId = params.id as string;
@@ -58,8 +67,8 @@ export default function TrackingDetailPage() {
     jobId ? `/transportation/shipments/?job_id=${jobId}` : null
   );
 
-  // Fallback: Also fetch job data directly
-  const { data: job, error: jobError } = useApi<Job>(
+  // Fallback: Also fetch job data directly with basic type
+  const { data: job, error: jobError } = useApi<BasicJob>(
     jobId ? `/jobs/${jobId}/` : null
   );
   
