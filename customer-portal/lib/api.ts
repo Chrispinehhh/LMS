@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // We will read this from an environment variable later when we deploy.
 // For local development, we hardcode the backend URL.
-const API_BASE_URL = typeof window === 'undefined' ? 'http://localhost:8001/api/v1' : 'http://localhost:8001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
