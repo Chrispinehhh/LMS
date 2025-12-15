@@ -2,11 +2,11 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  onAuthStateChanged, 
-  User as FirebaseUser, 
-  signOut, 
-  GoogleAuthProvider, 
+import {
+  onAuthStateChanged,
+  User as FirebaseUser,
+  signOut,
+  GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword
 } from 'firebase/auth';
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Listen for Firebase auth state changes
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const unsubscribe = auth ? onAuthStateChanged(auth, (user) => {
         setFirebaseUser(user);
         if (!user) {
           // If Firebase user is logged out, ensure our backend state is also cleared.
@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           delete apiClient.defaults.headers.common['Authorization'];
           setBackendUser(null);
         }
-      });
-      
+      }) : () => { };
+
       setLoading(false);
       return () => unsubscribe();
     };
@@ -82,12 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Show success message instead of redirecting
     toast.success(`Welcome back, ${backendUserData.first_name}!`);
   };
-  
+
   // Login with Google
   const googleLogin = async () => {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      if (!auth) throw new Error('Firebase auth not initialized');
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
         const firebaseToken = await result.user.getIdToken();
@@ -106,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const emailLogin = async (email: string, password: string) => {
     setLoading(true);
     try {
+      if (!auth) throw new Error('Firebase auth not initialized');
       const result = await signInWithEmailAndPassword(auth, email, password);
       if (result.user) {
         const firebaseToken = await result.user.getIdToken();
@@ -121,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    signOut(auth);
+    if (auth) signOut(auth);
     removeToken();
     delete apiClient.defaults.headers.common['Authorization'];
     setBackendUser(null);
