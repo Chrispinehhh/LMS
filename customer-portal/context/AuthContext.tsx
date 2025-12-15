@@ -10,7 +10,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import apiClient from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { getToken, setToken, removeToken } from '@/lib/token';
@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Listen for Firebase auth state changes
+      const auth = getFirebaseAuth();
       const unsubscribe = auth ? onAuthStateChanged(auth, (user) => {
         setFirebaseUser(user);
         if (!user) {
@@ -88,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      const auth = getFirebaseAuth();
       if (!auth) throw new Error('Firebase auth not initialized');
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
@@ -123,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    const auth = getFirebaseAuth();
     if (auth) signOut(auth);
     removeToken();
     delete apiClient.defaults.headers.common['Authorization'];

@@ -12,13 +12,26 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase only on client-side
+// Lazy initialization - only initialize when needed
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 
-if (typeof window !== 'undefined') {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-  auth = getAuth(app);
-}
+export const getFirebaseApp = () => {
+  if (typeof window === 'undefined') return undefined;
+  if (!app) {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  }
+  return app;
+};
 
-export { app, auth };
+export const getFirebaseAuth = () => {
+  if (typeof window === 'undefined') return undefined;
+  const firebaseApp = getFirebaseApp();
+  if (!auth && firebaseApp) {
+    auth = getAuth(firebaseApp);
+  }
+  return auth;
+};
+
+// Legacy exports for backward compatibility
+export { getFirebaseApp as app, getFirebaseAuth as auth };
