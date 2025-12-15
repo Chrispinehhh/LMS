@@ -1,16 +1,16 @@
 "use client"; // This is a client-side context
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  onAuthStateChanged, 
-  User as FirebaseUser, 
-  signOut, 
-  GoogleAuthProvider, 
+import {
+  onAuthStateChanged,
+  User as FirebaseUser,
+  signOut,
+  GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword
 } from 'firebase/auth';
 // FIX: Correcting import paths
-import { auth } from '../lib/firebase';
+import { getFirebaseAuth } from '../lib/firebase';
 import apiClient from '../lib/api';
 import { useRouter } from 'next/navigation';
 import { getToken, setToken, removeToken } from '../lib/token';
@@ -62,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const auth = getFirebaseAuth();
+      const unsubscribe = auth ? onAuthStateChanged(auth, (user) => {
         setFirebaseUser(user);
         if (!user) {
           // Ensure local session is cleared if Firebase user state is lost
@@ -71,21 +72,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setBackendUser(null);
         }
       });
-      
+
       setLoading(false);
       return () => unsubscribe();
     };
 
     initializeAuth();
     // Removed unused eslint-disable directive here
-  }, []); 
+  }, []);
 
   const login = async () => { // Google Login (kept as 'login')
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      const auth = getFirebaseAuth();
+      if (!auth) throw new Error('Firebase not initialized');
       const result = await signInWithPopup(auth, provider);
-      
+
       if (result.user) {
         const firebaseToken = await result.user.getIdToken();
         const backendResponse = await apiClient.post('/auth/firebase/', { token: firebaseToken });
@@ -95,15 +98,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         setBackendUser(backendUserData);
 
-        router.push('/dashboard'); 
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error("Error during Google login:", error);
-      signOut(auth);
+      const auth = getFirebaseAuth();
+      if (auth) signOut(auth);
       removeToken();
       delete apiClient.defaults.headers.common['Authorization'];
       setBackendUser(null);
-      throw error; 
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -113,12 +117,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       // Step 1: Sign in to Firebase with email and password
+      const auth = getFirebaseAuth();
+      if (!auth) throw new Error('Firebase not initialized');
       const result = await signInWithEmailAndPassword(auth, email, password);
-      
+
       if (result.user) {
         // Step 2: Get the Firebase ID token
         const firebaseToken = await result.user.getIdToken();
-        
+
         // Step 3: Exchange the token with our backend
         const backendResponse = await apiClient.post('/auth/firebase/', { token: firebaseToken });
         const { access: accessToken, user: backendUserData } = backendResponse.data;
@@ -127,24 +133,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(accessToken);
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         setBackendUser(backendUserData);
-        router.push('/dashboard'); 
+        router.push('/dashboard');
       }
     } catch (error) { // FIX: Removed ': any' here. The error is now implicitly 'unknown'.
       console.error("Error during email login:", error);
       // Ensure session is cleared on login failure
-      signOut(auth); 
+      const auth = getFirebaseAuth();
+      if (auth) signOut(auth);
       removeToken();
       delete apiClient.defaults.headers.common['Authorization'];
       setBackendUser(null);
       // Let the component handle the error message by re-throwing it
-      throw error; 
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   const logout = () => {
-    signOut(auth);
+    const auth = getFirebaseAuth();
+    if (auth) signOut(auth);
     removeToken();
     delete apiClient.defaults.headers.common['Authorization'];
     setBackendUser(null);
