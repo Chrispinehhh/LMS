@@ -5,3 +5,10 @@ startCommand = "gunicorn --chdir backend logipro_backend.wsgi:application"
 
 [deploy]
 startCommand = "gunicorn --chdir backend logipro_backend.wsgi:application"
+
+[nixpacks]
+phases.setup.nixPkgs = ["python311", "python311Packages.pip"]
+phases.setup.cmds = ["python3 -m venv /opt/venv", ". /opt/venv/bin/activate", "pip install --upgrade pip"]
+phases.build.cmds = [". /opt/venv/bin/activate", "pip install -r backend/requirements.txt", "python backend/manage.py collectstatic --noinput", "python backend/manage.py migrate"]
+phases.start.cmds = [". /opt/venv/bin/activate", "gunicorn --chdir backend logipro_backend.wsgi:application"]
+
