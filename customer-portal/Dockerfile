@@ -1,5 +1,4 @@
-# Use Node.js LTS
-FROM node:20-alpine
+FROM node:20
 
 # Set working directory
 WORKDIR /app
@@ -8,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+# RUN npm install
 
 # Copy the rest of the code
 COPY . .

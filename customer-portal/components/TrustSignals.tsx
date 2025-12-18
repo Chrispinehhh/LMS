@@ -34,7 +34,7 @@ const testimonials = [
         name: 'Emily Rodriguez',
         company: 'Home Owner',
         rating: 5,
-        text: 'Moving to a new state was stressful, but LogiPro made the logistics part effortless. Highly recommend!',
+        text: 'Moving to a new state was stressful, but S&S Logistics made the logistics part effortless. Highly recommend!',
         image: '/testimonials/emily.jpg' // Placeholder
     },
 ];
@@ -74,7 +74,7 @@ export function TrustSignals() {
                         Why Customers Choose Us
                     </h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Join thousands of satisfied customers who trust LogiPro for their logistics needs
+                        Join thousands of satisfied customers who trust S&S Logistics for their logistics needs
                     </p>
                 </div>
 
