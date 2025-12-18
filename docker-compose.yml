@@ -37,9 +37,24 @@ services:
       - ./customer-portal:/app
       - /app/node_modules
     ports:
-      - "3001:3001"
+      - "3001:3000"
     environment:
       - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  driver-app:
+    build:
+      context: ./driver-app
+    container_name: logipro_driver_app
+    volumes:
+      - ./driver-app:/app
+      - /app/node_modules
+    ports:
+      - "19006:8081"
+    environment:
+      - CI=1
     depends_on:
       - backend
     restart: unless-stopped

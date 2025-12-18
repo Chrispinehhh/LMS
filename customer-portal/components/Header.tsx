@@ -2,6 +2,7 @@
 "use client";
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { LogIn, Menu, X, Home, User, LogOut, Package, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ export default function Header() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -33,24 +34,26 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   };
 
+  const pathname = usePathname(); // Need to import usePathname
+  const isDashboard = pathname?.startsWith('/dashboard');
+
   return (
     <>
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
 
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled 
-          ? 'bg-gray-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl' 
-          : 'bg-transparent'
-      }`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled || isDashboard
+        ? 'bg-gray-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl'
+        : 'bg-transparent'
+        }`}>
         <nav className="container mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex-shrink-0">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="flex items-center gap-3 text-xl font-black text-white hover:text-emerald-200 transition-all duration-300 group"
                 onClick={closeMobileMenu}
               >
@@ -67,39 +70,39 @@ export default function Header() {
                 </div>
               </Link>
             </div>
-            
+
             {/* Desktop Navigation */}
             <div className="hidden lg:flex lg:items-center lg:space-x-1">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="flex items-center gap-2 text-white hover:text-emerald-300 transition-all duration-300 font-semibold text-sm px-5 py-3 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
               >
                 <Home className="h-4 w-4 transition-transform group-hover:scale-110" />
                 Home
               </Link>
-              <Link 
-                href="/services" 
+              <Link
+                href="/services"
                 className="flex items-center gap-2 text-white hover:text-emerald-300 transition-all duration-300 font-semibold text-sm px-5 py-3 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
               >
                 <Package className="h-4 w-4 transition-transform group-hover:scale-110" />
                 Our Services
               </Link>
-              <Link 
-                href="/track" 
+              <Link
+                href="/track"
                 className="flex items-center gap-2 text-white hover:text-emerald-300 transition-all duration-300 font-semibold text-sm px-5 py-3 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
               >
                 <MapPin className="h-4 w-4 transition-transform group-hover:scale-110" />
                 Track Delivery
               </Link>
-              <Link 
-                href="/contact" 
+              <Link
+                href="/contact"
                 className="flex items-center gap-2 text-white hover:text-emerald-300 transition-all duration-300 font-semibold text-sm px-5 py-3 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
               >
                 <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
                 Contact
               </Link>
             </div>
-            
+
             {/* Desktop User Section */}
             <div className="hidden lg:flex lg:items-center lg:space-x-3">
               {backendUser ? (
@@ -111,14 +114,14 @@ export default function Header() {
                       {backendUser.first_name}
                     </span>
                   </div>
-                  
+
                   {/* User Menu Dropdown */}
                   <div className="relative group">
                     <button className="flex items-center space-x-2 text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2.5 hover:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-emerald-500/25">
                       <User className="h-4 w-4" />
                       <span className="text-sm font-medium">Account</span>
                     </button>
-                    
+
                     {/* Dropdown Menu */}
                     <div className="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top-right scale-95 group-hover:scale-100">
                       <div className="p-2">
@@ -128,22 +131,22 @@ export default function Header() {
                           </p>
                           <p className="text-gray-400 text-xs">{backendUser.email}</p>
                         </div>
-                        <Link 
-                          href="/my-jobs" 
+                        <Link
+                          href="/my-jobs"
                           className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-white hover:bg-white/10 rounded-lg transition-colors group"
                         >
                           <Package className="h-4 w-4" />
                           My Shipments
                         </Link>
-                        <Link 
-                          href="/profile" 
+                        <Link
+                          href="/profile"
                           className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-white hover:bg-white/10 rounded-lg transition-colors group"
                         >
                           <User className="h-4 w-4" />
                           Profile Settings
                         </Link>
                         <div className="border-t border-white/10 mt-2 pt-2">
-                          <button 
+                          <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors group"
                           >
@@ -197,7 +200,7 @@ export default function Header() {
                   <span className="ml-1 text-xs">Login</span>
                 </Button>
               )}
-              
+
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -221,44 +224,44 @@ export default function Header() {
                     <p className="text-xs text-gray-300 mt-1">{backendUser.email}</p>
                   </div>
                 )}
-                
-                <Link 
-                  href="/" 
+
+                <Link
+                  href="/"
                   className="flex items-center justify-center gap-3 text-white hover:text-emerald-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
                   onClick={closeMobileMenu}
                 >
                   <Home className="h-4 w-4 transition-transform group-hover:scale-110" />
                   Home
                 </Link>
-                <Link 
-                  href="/services" 
+                <Link
+                  href="/services"
                   className="flex items-center justify-center gap-3 text-white hover:text-emerald-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
                   onClick={closeMobileMenu}
                 >
                   <Package className="h-4 w-4 transition-transform group-hover:scale-110" />
                   Our Services
                 </Link>
-                <Link 
-                  href="/track" 
+                <Link
+                  href="/track"
                   className="flex items-center justify-center gap-3 text-white hover:text-emerald-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
                   onClick={closeMobileMenu}
                 >
                   <MapPin className="h-4 w-4 transition-transform group-hover:scale-110" />
                   Track Delivery
                 </Link>
-                
+
                 {backendUser && (
                   <>
-                    <Link 
-                      href="/my-jobs" 
+                    <Link
+                      href="/my-jobs"
                       className="flex items-center justify-center gap-3 text-white hover:text-emerald-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
                       onClick={closeMobileMenu}
                     >
                       <Package className="h-4 w-4 transition-transform group-hover:scale-110" />
                       My Shipments
                     </Link>
-                    <Link 
-                      href="/profile" 
+                    <Link
+                      href="/profile"
                       className="flex items-center justify-center gap-3 text-white hover:text-emerald-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
                       onClick={closeMobileMenu}
                     >
@@ -267,18 +270,18 @@ export default function Header() {
                     </Link>
                   </>
                 )}
-                
-                <Link 
-                  href="/contact" 
+
+                <Link
+                  href="/contact"
                   className="flex items-center justify-center gap-3 text-white hover:text-emerald-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/20 group"
                   onClick={closeMobileMenu}
                 >
                   <Phone className="h-4 w-4 transition-transform group-hover:scale-110" />
                   Contact Us
                 </Link>
-                
+
                 {backendUser && (
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="flex items-center justify-center gap-3 text-red-400 hover:text-red-300 transition-all duration-300 font-semibold py-3 px-4 rounded-xl hover:bg-red-500/10 backdrop-blur-sm border border-transparent hover:border-red-500/20 group"
                   >

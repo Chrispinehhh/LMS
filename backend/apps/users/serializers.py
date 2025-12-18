@@ -2,7 +2,8 @@
 
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User
+from .models import User, CustomerAddress
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -68,3 +69,41 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     # ⚠️ For the client side to work without modification, the class body should revert to:
     # username_field = User.EMAIL_FIELD
+
+
+class CustomerAddressSerializer(serializers.ModelSerializer):
+    """
+    Serializer for customer address book
+    """
+    label_display = serializers.CharField(source='get_label_display', read_only=True)
+    
+    class Meta:
+        model = CustomerAddress
+        fields = [
+            'id',
+            'label',
+            'label_display',
+            'name',
+            'address1',
+            'address2',
+            'city',
+            'state',
+            'zip_code',
+            'phone',
+            'is_default',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate_state(self, value):
+        """Ensure state code is uppercase and 2 letters"""
+        if len(value) != 2:
+            raise serializers.ValidationError("State code must be 2 letters")
+        return value.upper()
+
+    def validate(self, data):
+        """Additional validation"""
+        # If setting as default, we don't need extra validation
+        # The model's save() method handles unsetting other defaults
+        return data

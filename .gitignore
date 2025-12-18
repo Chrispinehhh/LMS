@@ -1,9 +1,28 @@
-# .gitignore (in the root LogiPro folder)
+# General
+.DS_Store
+*.log
+.env
+.env.local
+.env.*.local
 
-# IDE / Editor specific
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+dist/
+build/
+coverage/
+
+# IDE
 .vscode/
 .idea/
-
-# Operating System files
-.DS_Store
-Thumbs.db
+*.swp

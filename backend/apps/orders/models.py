@@ -43,3 +43,41 @@ class Job(BaseModel):
 
     def __str__(self):
         return f"Job {self.id} for {self.customer.username if self.customer else 'N/A'}"
+
+
+class JobTimeline(BaseModel):
+    """
+    Tracks the status history of a job from placement to delivery
+    """
+    class Status(models.TextChoices):
+        ORDER_PLACED = 'ORDER_PLACED', 'Order Placed'
+        PICKED_UP = 'PICKED_UP', 'Picked Up'
+        IN_TRANSIT = 'IN_TRANSIT', 'In Transit'
+        OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY', 'Out for Delivery'
+        DELIVERED = 'DELIVERED', 'Delivered'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='timeline')
+    status = models.CharField(max_length=50, choices=Status.choices)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    location = models.CharField(max_length=255)
+    description = models.TextField()
+    completed = models.BooleanField(default=True)
+    is_current = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['timestamp']
+        verbose_name = 'Job Timeline'
+        verbose_name_plural = 'Job Timelines'
+
+    def __str__(self):
+        return f"{self.job.id} - {self.get_status_display()} at {self.timestamp}"
+
+    def save(self,  *args, **kwargs):
+        # Ensure only one current status per job
+        if self.is_current:
+            JobTimeline.objects.filter(
+                job=self.job,
+                is_current=True
+            ).exclude(pk=self.pk).update(is_current=False)
+        super().save(*args, **kwargs)

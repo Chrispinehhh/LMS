@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 # Import all views from their respective apps
 from apps.core.views import health_check
+from apps.core.analytics_views import PublicStatsView
 from apps.users.views import (
     UserListView, 
     FirebaseLoginView, 
@@ -12,6 +13,7 @@ from apps.users.views import (
     CreateUserView,
     EmailTokenObtainPairView
 )
+from apps.orders.customer_views import TrackingViewSet
 
 app_name = "api"
 
@@ -42,6 +44,19 @@ urlpatterns = [
     
     # Group transportation under its own prefix
     path("transportation/", include(transportation_patterns)),
+    
+    # Customer Portal APIs
+    path("customers/me/", include("apps.users.customer_urls")),
+    path("customers/me/orders/", include("apps.orders.customer_urls")),
+    
+    # Public endpoints (no auth)
+    path("quotes/", include("apps.quoting.urls")),
+    path("analytics/public-stats/", PublicStatsView.as_view(), name="public-stats"),
+    
+    # Public tracking endpoint (no auth required)
+    path("tracking/", include([
+        path('<uuid:id>/', TrackingViewSet.as_view({'get': 'retrieve'}), name='tracking-detail'),
+    ])),
     
     # Include URLs from our other apps
     path("", include("apps.orders.urls")), # Provides /api/v1/jobs/

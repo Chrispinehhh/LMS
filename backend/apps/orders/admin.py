@@ -1,13 +1,27 @@
 # apps/orders/admin.py
 
 from django.contrib import admin
-from .models import Job
+from .models import Job, JobTimeline
+
+class JobTimelineInline(admin.TabularInline):
+    model = JobTimeline
+    extra = 1
+    readonly_fields = ('timestamp',)
+
+@admin.register(JobTimeline)
+class JobTimelineAdmin(admin.ModelAdmin):
+    list_display = ('job', 'status', 'timestamp', 'location', 'is_current')
+    list_filter = ('status', 'is_current', 'timestamp')
+    search_fields = ('job__id', 'location', 'description')
+    autocomplete_fields = ['job']
 
 @admin.register(Job)
 class JobAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Job model.
     """
+    inlines = [JobTimelineInline]  # View timeline directly in Job
+
     list_display = (
         'id', 
         'customer', 

@@ -1,12 +1,10 @@
-// customer-portal/app/track/page.tsx
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Truck, MapPin, Clock, Shield, Package } from 'lucide-react';
+import { Search, Truck, MapPin, Clock, Package, CheckCircle, ArrowRight } from 'lucide-react';
 
 export default function TrackLandingPage() {
   const [trackingId, setTrackingId] = useState('');
@@ -20,132 +18,157 @@ export default function TrackLandingPage() {
   };
 
   return (
-    <div className="relative bg-gray-900 text-white min-h-screen pt-20 pb-8">
-      {/* Background Image & Overlay */}
-      <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: "url('/hero-background.jpg')" }}></div>
-      <div className="absolute inset-0 bg-gray-900/90 backdrop-blur-sm"></div>
-
-      {/* Animated Background Elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse-slow"></div>
-      <div className="absolute bottom-40 right-10 w-96 h-96 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse-slow animation-delay-2000"></div>
-
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Main Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 border border-white/20 mb-6">
-              <Truck className="h-6 w-6 text-blue-300" />
-              <span className="text-sm font-semibold text-blue-300">REAL-TIME TRACKING</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight">
-              Track Your <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Delivery</span>
-            </h1>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Get live updates and real-time location tracking for your shipment. Peace of mind delivered.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-6 py-8 md:py-20 max-w-7xl">
+        {/* Header */}
+        <div className="text-center mb-8 md:mb-16">
+          <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-6 py-2 mb-6">
+            <div className="h-2 w-2 bg-blue-600 rounded-full animate-pulse"></div>
+            <span className="text-sm font-semibold text-blue-700">LIVE TRACKING</span>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
-            {/* Feature Cards */}
-            <div className="group bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6 text-center hover:bg-white/10 transition-all duration-500 hover:scale-105">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-500/20 mb-4 group-hover:scale-110 transition-transform duration-300">
-                <MapPin className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Live Location</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                Real-time GPS tracking shows exactly where your delivery is at all times
-              </p>
-            </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 mb-6 tracking-tight">
+            Track Your{' '}
+            <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              Shipment
+            </span>
+          </h1>
 
-            <div className="group bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6 text-center hover:bg-white/10 transition-all duration-500 hover:scale-105">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-green-500/20 mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Clock className="h-6 w-6 text-green-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">ETA Updates</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                Accurate estimated arrival times that update in real-time as conditions change
-              </p>
-            </div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Get real-time updates and live location tracking for your delivery. Peace of mind, delivered.
+          </p>
+        </div>
 
-            <div className="group bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6 text-center hover:bg-white/10 transition-all duration-500 hover:scale-105">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/20 mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Shield className="h-6 w-6 text-amber-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Secure Tracking</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                Your shipment details are protected with enterprise-grade security
-              </p>
-            </div>
-          </div>
-
-          {/* Tracking Card */}
-          <Card className="max-w-2xl mx-auto bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 mb-4">
-                  <Package className="h-8 w-8 text-white" />
+        <div className="grid lg:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
+          {/* Tracking Form */}
+          <div>
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-2xl mb-4">
+                  <Package className="h-8 w-8 text-blue-600" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-white">Enter Tracking Number</CardTitle>
-                <CardDescription className="text-gray-300 pt-2 text-base">
-                  Find your Job ID on your booking confirmation email or receipt
-                </CardDescription>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Enter Tracking Number</h2>
+                <p className="text-gray-600">
+                  Find your Order ID in your booking confirmation email
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <form onSubmit={handleTrack} className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="trackingId" className="text-sm font-medium text-gray-300 block text-left">
-                    Job ID / Tracking Number
+
+              <form onSubmit={handleTrack} className="space-y-6">
+                <div>
+                  <label htmlFor="trackingId" className="block text-sm font-medium text-gray-700 mb-2">
+                    Order ID / Tracking Number
                   </label>
                   <Input
                     id="trackingId"
                     type="text"
                     value={trackingId}
                     onChange={(e) => setTrackingId(e.target.value)}
-                    placeholder="Enter your Job ID (e.g., 2cead355-1234-5678-9abc-def123456789)"
-                    className="bg-white/5 border-white/20 placeholder:text-gray-400 h-14 text-lg flex-grow rounded-xl focus:bg-white/10 transition-colors"
+                    placeholder="e.g., ORD-8921"
+                    className="h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 h-14 text-lg font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg group"
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg"
                   disabled={!trackingId.trim()}
                 >
-                  <Search className="mr-3 h-5 w-5 transition-transform group-hover:scale-110" /> 
-                  Track Delivery
+                  <Search className="mr-2 h-5 w-5" />
+                  Track My Delivery
                 </Button>
               </form>
 
-              {/* Help Text */}
-              <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
-                <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-green-400" />
-                  Can&apos;t find your Job ID?
-                </h4>
-                <p className="text-xs text-gray-400">
-                  Check your booking confirmation email or contact our support team at 
-                  <span className="text-blue-300"> support@logipro.com</span>
+              <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-gray-900">Can't find your Order ID?</span>
+                  <br />
+                  Check your confirmation email or contact{' '}
+                  <a href="mailto:support@logipro.com" className="text-blue-600 hover:underline">
+                    support@logipro.com
+                  </a>
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Additional Info */}
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center gap-4 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span>Live Tracking</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span>24/7 Updates</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
-                <span>Secure & Private</span>
-              </div>
+          {/* Features */}
+          <div className="lg:order-2 space-y-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">What You'll See</h3>
+
+            {[
+              {
+                icon: MapPin,
+                title: 'Real-Time Location',
+                description: 'GPS tracking shows exactly where your delivery is right now',
+                color: 'blue'
+              },
+              {
+                icon: Clock,
+                title: 'Accurate ETA',
+                description: 'Live estimated arrival time that updates as conditions change',
+                color: 'green'
+              },
+              {
+                icon: Truck,
+                title: 'Driver Details',
+                description: 'View your driver\'s name, vehicle info, and contact button',
+                color: 'orange'
+              },
+              {
+                icon: CheckCircle,
+                title: 'Status Timeline',
+                description: 'Complete journey from pickup to delivery with timestamps',
+                color: 'purple'
+              },
+            ].map((feature, index) => {
+              const Icon = feature.icon;
+              const colorClasses = {
+                blue: 'bg-blue-100 text-blue-600',
+                green: 'bg-green-100 text-green-600',
+                orange: 'bg-orange-100 text-orange-600',
+                purple: 'bg-purple-100 text-purple-600',
+              };
+
+              return (
+                <div key={index} className="flex gap-4 p-6 bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+                  <div className={`flex-shrink-0 h-12 w-12 rounded-xl ${colorClasses[feature.color as keyof typeof colorClasses]} flex items-center justify-center`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
+                    <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="mt-8 p-6 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl text-white">
+              <h4 className="font-semibold mb-2">Need Help?</h4>
+              <p className="text-sm text-blue-100 mb-4">
+                Our support team is available 24/7 to assist you with tracking or delivery questions.
+              </p>
+              <Button variant="outline" className="bg-white text-blue-600 hover:bg-gray-100 border-0">
+                Contact Support <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="mt-20 text-center">
+          <div className="inline-flex items-center gap-8 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <span>Live Updates</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+              <span>99.9% Uptime</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-purple-500 rounded-full"></div>
+              <span>Secure Tracking</span>
             </div>
           </div>
         </div>

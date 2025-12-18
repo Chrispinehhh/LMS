@@ -1,6 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, CustomerAddress
+
+@admin.register(CustomerAddress)
+class CustomerAddressAdmin(admin.ModelAdmin):
+    list_display = ('name', 'customer', 'label', 'city', 'state', 'is_default')
+    list_filter = ('label', 'is_default', 'city')
+    search_fields = ('name', 'address1', 'customer__email', 'phone')
+    autocomplete_fields = ['customer']
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):

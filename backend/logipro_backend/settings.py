@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "apps.billing.apps.BillingConfig",
     "apps.notifications.apps.NotificationsConfig",
     "apps.reports.apps.ReportsConfig",
+    "apps.quoting.apps.QuotingConfig",
 ]
 
 MIDDLEWARE = [
