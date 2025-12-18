@@ -38,6 +38,9 @@ class Job(BaseModel):
     delivery_contact_phone = models.CharField(max_length=20)
 
     requested_pickup_date = models.DateTimeField()
+    
+    proof_of_delivery_image = models.ImageField(upload_to='pod/', null=True, blank=True)
+
 
     # --- THE 'status' FIELD HAS BEEN REMOVED FROM THIS MODEL ---
 

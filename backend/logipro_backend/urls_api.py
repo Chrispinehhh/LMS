@@ -58,6 +58,9 @@ urlpatterns = [
         path('<uuid:id>/', TrackingViewSet.as_view({'get': 'retrieve'}), name='tracking-detail'),
     ])),
     
+    # Driver App APIs
+    path("driver/", include("apps.orders.driver_urls")),
+
     # Include URLs from our other apps
     path("", include("apps.orders.urls")), # Provides /api/v1/jobs/
     path("billing/", include("apps.billing.urls")),

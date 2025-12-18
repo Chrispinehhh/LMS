@@ -9,15 +9,6 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 const fleet = [
     {
-        id: 1,
-        name: "Ram 1500 Limited",
-        category: "Residential & Small Moves",
-        image: "/images/fleet/ram-pickup.jpg",
-        description: "Perfect for quick, single-item moves or small apartment relocations. Powerful and reliable.",
-        capabilities: ["Single Furniture Items", "Small Apartments", "Quick Deliveries"],
-        icon: Truck
-    },
-    {
         id: 2,
         name: "S&S Logistics Box Truck (Standard)",
         category: "Residential Moving",
@@ -25,6 +16,15 @@ const fleet = [
         description: "The gold standard for residential moving. Spacious enough for 1-2 bedroom apartments.",
         capabilities: ["1-2 Bedroom Apartments", "Studio Moves", "Appliance Delivery"],
         icon: Box
+    },
+    {
+        id: 1,
+        name: "Ram 1500 Limited",
+        category: "Residential & Small Moves",
+        image: "/images/fleet/ram-pickup.jpg",
+        description: "Perfect for quick, single-item moves or small apartment relocations. Powerful and reliable.",
+        capabilities: ["Single Furniture Items", "Small Apartments", "Quick Deliveries"],
+        icon: Truck
     },
     {
         id: 3,

@@ -1,16 +1,16 @@
 // driver-app/src/screens/JobDetailScreen.tsx
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  Button, 
-  Alert, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Button,
+  Alert,
   ActivityIndicator,
   Image,
-  TouchableOpacity 
+  TouchableOpacity
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { launchCameraAsync, requestCameraPermissionsAsync, PermissionStatus } from 'expo-image-picker';
@@ -21,90 +21,53 @@ import apiClient from '../lib/api';
 
 // Reusable component for info blocks
 const InfoBlock = ({ label, value }: { label: string; value: string | undefined }) => (
-    <View style={styles.infoBlock}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value || 'N/A'}</Text>
-    </View>
+  <View style={styles.infoBlock}>
+    <Text style={styles.label}>{label}</Text>
+    <Text style={styles.value}>{value || 'N/A'}</Text>
+  </View>
 );
 
 export default function JobDetailScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'JobDetail'>>();
   const { jobId, shipmentId } = route.params;
 
-  const { data: job, error, isLoading, mutate } = useApi<JobDetail>(jobId ? `/jobs/${jobId}/` : null);
-  
+  const { data: job, error, isLoading, mutate } = useApi<JobDetail>(jobId ? `/driver/jobs/${jobId}/` : null);
+
   const [capturedImage, setCapturedImage] = React.useState<string | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
 
-  // Type assertion to include ASSIGNED status
-  const status = job?.status as 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | undefined;
+  // Type assertion to include all statuses
+  const status = job?.status as 'PENDING' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | undefined;
 
-  const startTrip = async () => {
+  const updateStatus = async (newStatus: string) => {
     if (isUpdatingStatus) return;
 
     setIsUpdatingStatus(true);
-    
     try {
-      console.log(`Starting trip for shipment: ${shipmentId}`);
-      
-      // Use the custom action endpoint
-      const response = await apiClient.post(`/transportation/shipments/${shipmentId}/start-trip/`, {});
-      
-      console.log('Start trip response:', response.data);
-      Alert.alert("Success", "Trip started successfully!");
-      mutate();
-      
-    } catch (err: any) {
-      console.error('Start trip error:', err);
-      console.error('Error response:', err.response?.data);
-      
-      // If custom action fails, try direct PATCH as fallback
-      if (err.response?.status === 404) {
-        console.log('Custom action not found, trying direct PATCH...');
-        try {
-          await apiClient.patch(`/transportation/shipments/${shipmentId}/`, {
-            status: 'IN_TRANSIT'
-          });
-          Alert.alert("Success", "Trip started successfully!");
-          mutate();
-        } catch (patchErr: any) {
-          const patchErrorMessage = patchErr.response?.data?.error || patchErr.response?.data?.detail || "Failed to start trip.";
-          Alert.alert("Error", `Start trip failed: ${patchErrorMessage}`);
-        }
-      } else {
-        const errorMessage = err.response?.data?.error || err.response?.data?.detail || "Failed to start trip. Please try again.";
-        Alert.alert("Error", errorMessage);
-      }
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
+      console.log(`Updating status to ${newStatus} for job: ${jobId}`);
+      // Unified Endpoint Call
+      await apiClient.post(`/driver/jobs/${jobId}/update_status/`, {
+        status: newStatus,
+        description: `Driver updated status to ${newStatus}`,
+        location: 'Driver Location'
+      });
 
-  const markAsDelivered = async () => {
-    if (isUpdatingStatus) return;
-
-    setIsUpdatingStatus(true);
-    
-    try {
-      console.log(`Marking as delivered for shipment: ${shipmentId}`);
-      
-      const response = await apiClient.post(`/transportation/shipments/${shipmentId}/mark-delivered/`, {});
-      
-      console.log('Mark delivered response:', response.data);
-      Alert.alert("Success", "Job has been marked as delivered!");
+      Alert.alert("Success", "Status updated successfully!");
       mutate();
-      
+
     } catch (err: any) {
-      console.error('Mark delivered error:', err);
-      console.error('Error response:', err.response?.data);
-      
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || "Failed to update status. Please try again.";
+      console.error('Update status error:', err);
+      const errorMessage = err.response?.data?.error || "Failed to update status.";
       Alert.alert("Error", errorMessage);
     } finally {
       setIsUpdatingStatus(false);
     }
   };
+
+  const startTrip = () => updateStatus('IN_TRANSIT');
+  const confirmPickup = () => updateStatus('PICKED_UP');
+  const markAsDelivered = () => updateStatus('DELIVERED');
 
   const handleTakePhoto = async () => {
     const permissionResult = await requestCameraPermissionsAsync();
@@ -133,22 +96,23 @@ export default function JobDetailScreen() {
     try {
       const response = await fetch(capturedImage);
       const blob = await response.blob();
-      
+
       const formData = new FormData();
-      const file = new File([blob], `pod_${shipmentId}_${Date.now()}.jpg`, {
+      const file = new File([blob], `pod_${jobId}_${Date.now()}.jpg`, {
         type: 'image/jpeg',
       });
-      
-      formData.append('proof_of_delivery_image', file);
 
-      const uploadResponse = await apiClient.post(`/transportation/shipments/${shipmentId}/upload-pod/`, formData, {
+      formData.append('proof_of_delivery_image', file as any);
+
+      // Use the new simplified upload endpoint
+      const uploadResponse = await apiClient.post(`/driver/jobs/${jobId}/upload-pod/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
       Alert.alert("Success", "Proof of Delivery uploaded successfully!");
-      
+
       setCapturedImage(null);
       mutate();
 
@@ -179,7 +143,7 @@ export default function JobDetailScreen() {
       </SafeAreaView>
     );
   }
-  
+
   if (error || !job || !status) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -195,12 +159,12 @@ export default function JobDetailScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.scrollView}>
         {/* Status Header */}
-        <View style={[styles.statusHeader, 
-          status === 'PENDING' && styles.statusPending,
-          status === 'ASSIGNED' && styles.statusAssigned,
-          status === 'IN_TRANSIT' && styles.statusInTransit,
-          status === 'DELIVERED' && styles.statusDelivered,
-          status === 'FAILED' && styles.statusFailed
+        <View style={[styles.statusHeader,
+        status === 'PENDING' && styles.statusPending,
+        status === 'ASSIGNED' && styles.statusAssigned,
+        status === 'IN_TRANSIT' && styles.statusInTransit,
+        status === 'DELIVERED' && styles.statusDelivered,
+        status === 'FAILED' && styles.statusFailed
         ]}>
           <View style={styles.statusContent}>
             <Text style={styles.statusLabel}>CURRENT STATUS</Text>
@@ -253,16 +217,16 @@ export default function JobDetailScreen() {
             <Text style={styles.cardTitle}>Proof of Delivery</Text>
             <Image source={{ uri: capturedImage }} style={styles.podImage} />
             <View style={styles.podActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.podButton, styles.retakeButton]}
-                onPress={handleRetakePhoto} 
+                onPress={handleRetakePhoto}
                 disabled={isUploading}
               >
                 <Text style={styles.retakeButtonText}>Retake</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.podButton, styles.uploadButton]}
-                onPress={handleUploadPhoto} 
+                onPress={handleUploadPhoto}
                 disabled={isUploading}
               >
                 {isUploading ? (
@@ -271,9 +235,9 @@ export default function JobDetailScreen() {
                   <Text style={styles.uploadButtonText}>Upload</Text>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.podButton, styles.cancelButton]}
-                onPress={handleCancelUpload} 
+                onPress={handleCancelUpload}
                 disabled={isUploading}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -291,8 +255,8 @@ export default function JobDetailScreen() {
         {job.proof_of_delivery_image && !capturedImage && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Proof of Delivery</Text>
-            <Image 
-              source={{ uri: job.proof_of_delivery_image }} 
+            <Image
+              source={{ uri: job.proof_of_delivery_image }}
               style={styles.podImage}
             />
             <View style={styles.uploadedContainer}>
@@ -300,61 +264,75 @@ export default function JobDetailScreen() {
             </View>
           </View>
         )}
-        
+
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-            {status === 'ASSIGNED' && (
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.startTripButton]}
-                  onPress={startTrip}
-                  disabled={isUpdatingStatus}
-                >
-                  {isUpdatingStatus ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>Start Trip</Text>
-                  )}
-                </TouchableOpacity>
-            )}
+          {status === 'PENDING' && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.startTripButton]}
+              onPress={confirmPickup}
+              disabled={isUpdatingStatus}
+            >
+              {isUpdatingStatus ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.actionButtonText}>Confirm Pickup</Text>
+              )}
+            </TouchableOpacity>
+          )}
 
-            {status === 'IN_TRANSIT' && !capturedImage && (
-              <View style={styles.inTransitActions}>
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.photoButton]}
-                  onPress={handleTakePhoto}
-                >
-                  <Text style={styles.actionButtonText}>📸 Take Delivery Photo</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.deliverButton]}
-                  onPress={markAsDelivered}
-                  disabled={isUpdatingStatus}
-                >
-                  {isUpdatingStatus ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>🚚 Mark as Delivered</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
+          {(status === 'PICKED_UP' || status === 'ASSIGNED') && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.startTripButton]}
+              onPress={startTrip}
+              disabled={isUpdatingStatus}
+            >
+              {isUpdatingStatus ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.actionButtonText}>Start Trip</Text>
+              )}
+            </TouchableOpacity>
+          )}
 
-            {status === 'DELIVERED' && (
-                <View style={[styles.statusSection, styles.completedSection]}>
-                  <Text style={styles.completedIcon}>✓</Text>
-                  <Text style={styles.completedText}>Delivery Completed</Text>
-                  <Text style={styles.completedSubtext}>Great job! Delivery has been successfully completed.</Text>
-                </View>
-            )}
+          {status === 'IN_TRANSIT' && !capturedImage && (
+            <View style={styles.inTransitActions}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.photoButton]}
+                onPress={handleTakePhoto}
+              >
+                <Text style={styles.actionButtonText}>📸 Take Delivery Photo</Text>
+              </TouchableOpacity>
 
-            {status === 'FAILED' && (
-                <View style={[styles.statusSection, styles.failedSection]}>
-                  <Text style={styles.failedIcon}>⚠️</Text>
-                  <Text style={styles.failedText}>Delivery Failed</Text>
-                  <Text style={styles.failedSubtext}>Please contact dispatch for assistance</Text>
-                </View>
-            )}
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deliverButton]}
+                onPress={markAsDelivered}
+                disabled={isUpdatingStatus}
+              >
+                {isUpdatingStatus ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.actionButtonText}>🚚 Mark as Delivered</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {status === 'DELIVERED' && (
+            <View style={[styles.statusSection, styles.completedSection]}>
+              <Text style={styles.completedIcon}>✓</Text>
+              <Text style={styles.completedText}>Delivery Completed</Text>
+              <Text style={styles.completedSubtext}>Great job! Delivery has been successfully completed.</Text>
+            </View>
+          )}
+
+          {status === 'FAILED' && (
+            <View style={[styles.statusSection, styles.failedSection]}>
+              <Text style={styles.failedIcon}>⚠️</Text>
+              <Text style={styles.failedText}>Delivery Failed</Text>
+              <Text style={styles.failedSubtext}>Please contact dispatch for assistance</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.footerSpacer} />

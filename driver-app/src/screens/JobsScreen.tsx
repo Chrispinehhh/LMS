@@ -3,7 +3,6 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { JobDetail } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -11,15 +10,17 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 // Type for our navigation prop
 type JobsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Jobs'>;
 
-// Define the ShipmentListItem type since it's not exported from types
-interface ShipmentListItem {
-  id: string;
-  job_id: string;
+// Type matching the Backend "DriverJobSerializer"
+interface Job {
+  id: string; // This is the ID
+  pickup_city: string; // The serializer returns cities
+  delivery_city: string;
   pickup_address: string;
   delivery_address: string;
   requested_pickup_date: string;
   customer_name: string;
-  status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
+  status: 'PENDING' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
+  cargo_description: string;
 }
 
 const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () => void }) => (
@@ -31,7 +32,7 @@ const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () =>
           <Text style={styles.statusText}>{item.status.replace('_', ' ')}</Text>
         </View>
       </View>
-      
+
       <View style={styles.routeContainer}>
         <View style={styles.routeDot}>
           <View style={styles.dot} />
@@ -111,9 +112,9 @@ export default function JobsScreen() {
       <FlatList
         data={assignedJobs}
         renderItem={({ item }) => (
-          <JobListItem 
+          <JobListItem
             item={item}
-            onPress={() => navigation.navigate('JobDetail', { 
+            onPress={() => navigation.navigate('JobDetail', {
               jobId: item.job_id,
               shipmentId: item.id
             })}

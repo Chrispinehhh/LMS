@@ -96,3 +96,51 @@ class JobSerializer(serializers.ModelSerializer):
             # Add 2-3 days for standard delivery
             return obj.requested_pickup_date + timedelta(days=3)
         return None
+
+
+class DriverJobSerializer(serializers.ModelSerializer):
+    """
+    Simplified job serializer for driver list view.
+    """
+    customer_name = serializers.CharField(source='customer.get_full_name', read_only=True)
+    customer_phone = serializers.CharField(source='customer.phone_number', read_only=True)
+    status = serializers.SerializerMethodField()
+    proof_of_delivery_image = serializers.ImageField(read_only=True)  # Add this field
+    
+    class Meta:
+        model = Job
+        fields = [
+            'id',
+            'status',
+            'service_type',
+            'cargo_description',
+            'pickup_address',
+            'pickup_city',
+            'pickup_contact_person',
+            'pickup_contact_phone',
+            'delivery_address',
+            'delivery_city',
+            'delivery_contact_person',
+            'delivery_contact_phone',
+            'requested_pickup_date',
+            'customer_name',
+            'customer_phone',
+            'proof_of_delivery_image', # Add this field
+        ]
+
+    def get_status(self, obj):
+        # Helper to get status from current timeline
+        timeline = obj.timeline.filter(is_current=True).first()
+        return timeline.status if timeline else 'PENDING'
+
+
+class DriverJobUpdateSerializer(serializers.Serializer):
+    """
+    Serializer to handle driver status updates (Pickup -> In Transit -> Delivered)
+    """
+    status = serializers.ChoiceField(choices=JobTimeline.Status.choices)
+    location = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    description = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+class DriverPODUploadSerializer(serializers.Serializer):
+    proof_of_delivery_image = serializers.ImageField()
