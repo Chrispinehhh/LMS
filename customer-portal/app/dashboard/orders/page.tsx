@@ -41,12 +41,6 @@ export default function OrdersPage() {
             // If a direct URL is provided (next/prev), use it. Otherwise construct base URL with params
             const endpoint = url || `/customers/me/orders/?${params.toString()}`;
 
-            // Handle the case where the API returns a full URL (e.g. http://server/api/...)
-            // vs relative path. Our apiClient expects relative path or we can use axios directly if full URL.
-            // Since apiClient has baseURL, strict full URLs might be tricky if domains mismatch in dev.
-            // But Django REST framework usually returns full absolute URLs for next/previous.
-            // We can strip the domain to be safe and use relative path with apiClient.
-
             let requestUrl = endpoint;
             if (url && url.startsWith('http')) {
                 const urlObj = new URL(url);
@@ -83,15 +77,15 @@ export default function OrdersPage() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'IN_TRANSIT':
-                return 'bg-blue-100 text-blue-700';
+                return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
             case 'DELIVERED':
-                return 'bg-green-100 text-green-700';
+                return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
             case 'PENDING':
-                return 'bg-amber-100 text-amber-700';
+                return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
             case 'CANCELLED':
-                return 'bg-red-100 text-red-700';
+                return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
             default:
-                return 'bg-gray-100 text-gray-700';
+                return 'bg-muted text-muted-foreground';
         }
     };
 
@@ -99,25 +93,25 @@ export default function OrdersPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
-                <p className="text-gray-600">Track and manage all your shipments in one place.</p>
+                <h1 className="text-3xl font-bold text-foreground mb-2">My Orders</h1>
+                <p className="text-muted-foreground">Track and manage all your shipments in one place.</p>
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
                 <div className="grid md:grid-cols-[1fr_200px] gap-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                             placeholder="Search by ID, city, or address..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 h-12"
+                            className="pl-10 h-12 bg-background border-input text-foreground"
                         />
                     </div>
 
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 bg-background border-input text-foreground">
                             <Filter className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
@@ -135,24 +129,24 @@ export default function OrdersPage() {
             {/* Orders List */}
             <div className="space-y-4">
                 {loading ? (
-                    <div className="p-12 text-center text-gray-500">Loading orders...</div>
+                    <div className="p-12 text-center text-muted-foreground">Loading orders...</div>
                 ) : orders.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                        <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
-                        <p className="text-gray-600 mb-6">Try adjusting your search or filters.</p>
-                        <Button asChild>
+                    <div className="bg-card rounded-xl border border-border p-12 text-center shadow-sm">
+                        <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-foreground mb-2">No orders found</h3>
+                        <p className="text-muted-foreground mb-6">Try adjusting your search or filters.</p>
+                        <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
                             <Link href="/book">Create New Order</Link>
                         </Button>
                     </div>
                 ) : (
                     orders.map((order) => (
-                        <div key={order.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                        <div key={order.id} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-shadow">
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                                 {/* Order Info */}
                                 <div className="flex-1 space-y-4">
                                     <div className="flex items-center gap-3 flex-wrap">
-                                        <h3 className="text-lg font-bold text-gray-900">Order #{order.id.slice(0, 8)}...</h3>
+                                        <h3 className="text-lg font-bold text-foreground">Order #{order.id.slice(0, 8)}...</h3>
                                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
                                             {order.status.replace('_', ' ')}
                                         </span>
@@ -160,35 +154,35 @@ export default function OrdersPage() {
 
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div className="flex items-center gap-2 text-sm">
-                                            <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                             <div>
-                                                <p className="font-medium text-gray-900">{order.pickup_city}</p>
-                                                <p className="text-gray-600">→ {order.delivery_city}</p>
+                                                <p className="font-medium text-foreground">{order.pickup_city}</p>
+                                                <p className="text-muted-foreground">→ {order.delivery_city}</p>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-2 text-sm">
-                                            <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                             <div>
-                                                <p className="font-medium text-gray-900">Pickup: {new Date(order.requested_pickup_date).toLocaleDateString()}</p>
-                                                <p className="text-gray-600">ETA: {order.estimated_delivery ? new Date(order.estimated_delivery).toLocaleDateString() : 'Pending'}</p>
+                                                <p className="font-medium text-foreground">Pickup: {new Date(order.requested_pickup_date).toLocaleDateString()}</p>
+                                                <p className="text-muted-foreground">ETA: {order.estimated_delivery ? new Date(order.estimated_delivery).toLocaleDateString() : 'Pending'}</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-2 border-t border-gray-100">
-                                        <p className="text-sm font-medium text-gray-500">{order.service_type.replace('_', ' ')}</p>
+                                    <div className="pt-2 border-t border-border">
+                                        <p className="text-sm font-medium text-muted-foreground">{order.service_type.replace('_', ' ')}</p>
                                     </div>
                                 </div>
 
                                 {/* Actions */}
                                 <div className="flex flex-col gap-3 lg:flex-shrink-0">
-                                    <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                                    <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
                                         <Link href={`/track/${order.id}`}>
                                             Track Order <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
-                                    <Button asChild variant="outline">
+                                    <Button asChild variant="outline" className="text-foreground border-input hover:bg-accent hover:text-accent-foreground">
                                         <Link href={`/dashboard/orders/${order.id}`}>View Details</Link>
                                     </Button>
                                 </div>
@@ -206,15 +200,17 @@ export default function OrdersPage() {
                         size="sm"
                         onClick={() => handlePageChange(prevPage, 'prev')}
                         disabled={!prevPage}
+                        className="text-foreground border-input disabled:opacity-50"
                     >
                         Previous
                     </Button>
-                    <span className="text-sm text-gray-600">Page {currentPage}</span>
+                    <span className="text-sm text-foreground">Page {currentPage}</span>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handlePageChange(nextPage, 'next')}
                         disabled={!nextPage}
+                        className="text-foreground border-input disabled:opacity-50"
                     >
                         Next
                     </Button>
@@ -223,4 +219,3 @@ export default function OrdersPage() {
         </div>
     );
 }
-
