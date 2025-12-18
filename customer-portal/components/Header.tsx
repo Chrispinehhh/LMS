@@ -40,10 +40,10 @@ export default function Header() {
 
   // Theme-aware styles
   const isTransparent = !isScrolled && !isDashboard;
-  const textColor = isTransparent ? 'text-white' : 'text-foreground';
-  const logoGradient = isTransparent ? 'from-white to-emerald-100' : 'from-primary to-emerald-600';
-  const hoverBg = isTransparent ? 'hover:bg-white/10' : 'hover:bg-accent';
-  const borderColor = isTransparent ? 'border-transparent hover:border-white/20' : 'border-transparent hover:border-border';
+  const textColor = 'text-foreground';
+  const logoGradient = 'from-primary to-emerald-600';
+  const hoverBg = 'hover:bg-accent';
+  const borderColor = isTransparent ? 'border-transparent hover:border-border' : 'border-transparent hover:border-border';
 
   return (
     <>
@@ -62,7 +62,7 @@ export default function Header() {
             <div className="flex-shrink-0">
               <Link
                 href="/"
-                className={`flex items-center gap-3 text-xl font-black ${isTransparent ? 'text-white' : 'text-foreground'} hover:text-primary transition-all duration-300 group`}
+                className={`flex items-center gap-3 text-xl font-black text-foreground hover:text-primary transition-all duration-300 group`}
                 onClick={closeMobileMenu}
               >
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 group-hover:from-emerald-600 group-hover:to-cyan-600 group-hover:scale-110 transition-all duration-300 shadow-lg">
@@ -72,7 +72,7 @@ export default function Header() {
                   <span className={`text-2xl bg-gradient-to-r ${logoGradient} bg-clip-text text-transparent`}>
                     S&S Logistics
                   </span>
-                  <span className={`text-xs ${isTransparent ? 'text-emerald-300' : 'text-muted-foreground'} font-normal opacity-80`}>
+                  <span className={`text-xs text-muted-foreground font-normal opacity-80`}>
                     Premium Logistics
                   </span>
                 </div>
@@ -105,16 +105,16 @@ export default function Header() {
               {backendUser ? (
                 <div className="flex items-center space-x-3">
                   {/* Welcome Message */}
-                  <div className={`text-sm ${isTransparent ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-white/20' : 'bg-muted border-border'} backdrop-blur-sm border rounded-xl px-4 py-2.5 shadow-sm`}>
-                    <span className={isTransparent ? "text-emerald-200" : "text-muted-foreground"}>Welcome, </span>
-                    <span className={`font-semibold ${isTransparent ? 'bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-transparent' : 'text-foreground'}`}>
+                  <div className={`text-sm bg-muted border-border backdrop-blur-sm border rounded-xl px-4 py-2.5 shadow-sm`}>
+                    <span className="text-muted-foreground">Welcome, </span>
+                    <span className={`font-semibold text-foreground`}>
                       {backendUser.first_name}
                     </span>
                   </div>
 
                   {/* User Menu Dropdown */}
                   <div className="relative group">
-                    <button className={`flex items-center space-x-2 ${textColor} ${hoverBg} backdrop-blur-sm border ${isTransparent ? 'border-white/20' : 'border-border'} rounded-xl px-4 py-2.5 transition-all duration-300 shadow-sm hover:shadow-md`}>
+                    <button className={`flex items-center space-x-2 ${textColor} ${hoverBg} backdrop-blur-sm border border-transparent hover:border-border rounded-xl px-4 py-2.5 transition-all duration-300 shadow-sm hover:shadow-md`}>
                       <User className="h-4 w-4" />
                       <span className="text-sm font-medium">Account</span>
                     </button>
@@ -174,7 +174,7 @@ export default function Header() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={handleLogout}
-                    className={`p-2 rounded-lg ${hoverBg} backdrop-blur-sm border ${isTransparent ? 'border-white/20 text-white' : 'border-border text-foreground'} transition-all duration-300`}
+                    className={`p-2 rounded-lg ${hoverBg} backdrop-blur-sm border border-transparent hover:border-border text-foreground transition-all duration-300`}
                     title="Log Out"
                   >
                     <LogOut className="h-4 w-4" />
@@ -193,7 +193,7 @@ export default function Header() {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`p-2 rounded-lg ${hoverBg} backdrop-blur-sm border ${isTransparent ? 'border-white/20 text-white' : 'border-border text-foreground'} transition-all duration-300`}
+                className={`p-2 rounded-lg ${hoverBg} backdrop-blur-sm border border-transparent hover:border-border text-foreground transition-all duration-300`}
               >
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
@@ -263,7 +263,7 @@ export default function Header() {
             </div>
           )}
         </nav>
-      </header>
+      </header >
     </>
   );
 }
