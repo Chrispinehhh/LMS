@@ -1,8 +1,6 @@
-# apps/transportation/admin.py
-
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-from .models import Vehicle, Driver, Shipment, MaintenanceLog
+from .models import Vehicle, Driver, Shipment, MaintenanceLog, ShipmentPhoto
 
 
 @admin.register(Vehicle)
@@ -96,9 +94,13 @@ class ShipmentAdmin(admin.ModelAdmin):
         'driver__user__username',
         'vehicle__license_plate'
     )
-    readonly_fields = ('created_at', 'updated_at', 'proof_of_delivery_preview')
+    readonly_fields = ('created_at', 'updated_at', 'proof_of_delivery_preview', 'signature_preview')
     raw_id_fields = ('job', 'driver', 'vehicle')
     
+    # inlines is populated via get_inlines to avoid circular reference issues if defined after
+    pass 
+
+
     fieldsets = (
         ('Shipment Assignment', {
             'fields': (
@@ -124,6 +126,8 @@ class ShipmentAdmin(admin.ModelAdmin):
             'fields': (
                 'proof_of_delivery_image',
                 'proof_of_delivery_preview',
+                'proof_of_delivery_signature',
+                'signature_preview',
             )
         }),
         ('Timestamps', {
@@ -137,13 +141,35 @@ class ShipmentAdmin(admin.ModelAdmin):
             return mark_safe(f'<img src="{obj.proof_of_delivery_image.url}" style="max-height: 200px; max-width: 300px;" />')
         return "No proof of delivery image uploaded"
     
-    proof_of_delivery_preview.short_description = "Current Proof of Delivery"
+    proof_of_delivery_preview.short_description = "Legacy POD Preview"
+
+    def signature_preview(self, obj):
+        if obj.proof_of_delivery_signature:
+            return mark_safe(f'<img src="{obj.proof_of_delivery_signature.url}" style="max-height: 150px; background-color: #fff; border: 1px solid #ccc;" />')
+        return "No signature captured"
+    
+    signature_preview.short_description = "Signature"
 
     def has_proof_of_delivery(self, obj):
-        return bool(obj.proof_of_delivery_image)
+        return bool(obj.proof_of_delivery_image) or bool(obj.proof_of_delivery_signature) or obj.photos.exists()
     
     has_proof_of_delivery.boolean = True
     has_proof_of_delivery.short_description = "POD"
+
+    def get_inlines(self, request, obj=None):
+        return [ShipmentPhotoInline]
+
+
+class ShipmentPhotoInline(admin.TabularInline):
+    model = ShipmentPhoto # Need to make sure ShipmentPhoto is imported
+    extra = 0
+    readonly_fields = ('image_preview',)
+
+    def image_preview(self, obj):
+        if obj.image:
+             return mark_safe(f'<img src="{obj.image.url}" style="max-height: 100px; max-width: 100px;" />')
+        return ""
+
 
 
 @admin.register(MaintenanceLog)

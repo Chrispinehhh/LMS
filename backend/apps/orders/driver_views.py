@@ -55,17 +55,44 @@ class DriverJobViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], url_path='upload-pod')
-    def upload_pod(self, request, job_number=None, pk=None):
+    @action(detail=True, methods=['post'], url_path='complete-delivery')
+    def complete_delivery(self, request, job_number=None, pk=None):
         job = self.get_object()
         
         if not hasattr(job, 'shipment'):
              return Response({'error': 'No shipment associated with this job'}, status=status.HTTP_404_NOT_FOUND)
 
-        image = request.FILES.get('proof_of_delivery_image')
-        if not image:
-             return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
-             
-        job.shipment.proof_of_delivery_image = image
+        # 1. Handle Signature
+        signature = request.FILES.get('proof_of_delivery_signature')
+        if signature:
+            job.shipment.proof_of_delivery_signature = signature
+            job.shipment.save()
+
+        # 2. Handle Multiple Photos
+        # request.FILES.getlist('photos') handles multiple files with same key
+        photos = request.FILES.getlist('photos')
+        for photo in photos:
+            from apps.transportation.models import ShipmentPhoto
+            ShipmentPhoto.objects.create(shipment=job.shipment, image=photo)
+
+        # 3. Update Status to DELIVERED
+        # Note: Frontend calls update_status separately usually, but we can do it here too for atomic completion
+        job.shipment.status = 'DELIVERED'
         job.shipment.save()
         
-        return Response({'status': 'success', 'image_url': job.shipment.proof_of_delivery_image.url if job.shipment.proof_of_delivery_image else ''})
+        # Also update JobTimeline
+        JobTimeline.objects.create(
+            job=job,
+            status='DELIVERED',
+            location='Driver Location',
+            description='Delivery completed with Proof of Delivery',
+            timestamp=timezone.now(),
+            is_current=True
+        )
+
+        return Response({'status': 'success', 'message': 'Delivery completed successfully'})
+
+    # Keep old endpoint for backwards compatibility if needed, but implementation updated
+    @action(detail=True, methods=['post'], url_path='upload-pod')
+    def upload_pod(self, request, job_number=None, pk=None):
+        return self.complete_delivery(request, job_number, pk)

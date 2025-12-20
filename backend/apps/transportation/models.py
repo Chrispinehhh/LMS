@@ -85,15 +85,34 @@ class Shipment(BaseModel):
     estimated_arrival = models.DateTimeField(null=True, blank=True)
     actual_arrival = models.DateTimeField(null=True, blank=True)
 
-    # Proof of delivery image field
+    # Proof of delivery image field (Deprecated in favor of ShipmentPhoto, but kept for legacy)
     proof_of_delivery_image = models.ImageField(
         upload_to='proof_of_delivery/', 
         null=True, 
         blank=True
     )
+    
+    # New: Signature field
+    proof_of_delivery_signature = models.ImageField(
+        upload_to='signatures/',
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"Shipment for Job #{self.job.job_number}"
+
+
+class ShipmentPhoto(BaseModel):
+    """
+    Allows multiple photos for a single shipment's Proof of Delivery.
+    """
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='photos')
+    image = models.ImageField(upload_to='proof_of_delivery/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Photo for Shipment {self.shipment.id} at {self.uploaded_at}"
 
 
 class MaintenanceLog(BaseModel):
