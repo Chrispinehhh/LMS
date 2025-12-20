@@ -12,7 +12,7 @@ import {
     Dimensions
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { ScreenBackground } from '../components/ScreenBackground';
+import { ScreenWrapper } from '../components/ScreenWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -57,7 +57,7 @@ export default function LoginScreen() {
     };
 
     return (
-        <ScreenBackground>
+        <ScreenWrapper>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -227,7 +227,7 @@ export default function LoginScreen() {
 
                 </StainedGlassCard>
             </KeyboardAvoidingView>
-        </ScreenBackground>
+        </ScreenWrapper>
     );
 }
 

@@ -93,7 +93,7 @@ class Shipment(BaseModel):
     )
 
     def __str__(self):
-        return f"Shipment for Job {self.job.id}"
+        return f"Shipment for Job #{self.job.job_number}"
 
 
 class MaintenanceLog(BaseModel):

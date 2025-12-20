@@ -75,7 +75,6 @@ class DriverAdmin(admin.ModelAdmin):
 @admin.register(Shipment)
 class ShipmentAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 
         'job', 
         'driver', 
         'vehicle', 

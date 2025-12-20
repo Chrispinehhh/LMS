@@ -38,7 +38,7 @@ class JobAdmin(admin.ModelAdmin):
         'delivery_city',
         'requested_pickup_date',
         'created_at',
-        'id', # Keep UUID visible but less prominent
+        'created_at',
     )
     
     list_filter = (

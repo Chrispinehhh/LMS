@@ -1,13 +1,22 @@
 // src/navigation/AppNavigator.tsx
-import React from 'react';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import {
+  View,
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  StatusBar,
+  Platform
+} from 'react-native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import * as NavigationBar from 'expo-navigation-bar';
 
 import LoginScreen from '../screens/LoginScreen';
 import JobsScreen from '../screens/JobsScreen';
@@ -35,7 +44,7 @@ function StainedGlassTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+    <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 0) }]}>
       <BlurView
         intensity={60}
         tint="dark"
@@ -111,19 +120,62 @@ function StainedGlassTabBar({ state, descriptors, navigation }: any) {
 
 function MainTabNavigator() {
   return (
-    <Tab.Navigator
-      tabBar={props => <StainedGlassTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tab.Screen name="Jobs" component={JobsScreen} options={{ title: 'Jobs' }} />
-      <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'History' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
-    </Tab.Navigator>
+    <View style={styles.mainContainer}>
+      <Tab.Navigator
+        tabBar={props => <StainedGlassTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tab.Screen
+          name="Jobs"
+          component={JobsScreen}
+          options={{
+            title: 'Jobs',
+          }}
+        />
+        <Tab.Screen
+          name="History"
+          component={HistoryScreen}
+          options={{ title: 'History' }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ title: 'Profile' }}
+        />
+      </Tab.Navigator>
+    </View>
   );
 }
 
 function MainStack() {
   const { user, isLoading } = useAuth();
+
+  // Hide Android navigation bar
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync("hidden");
+      // @ts-ignore
+      NavigationBar.setBehaviorAsync("sticky-immersive");
+      NavigationBar.setPositionAsync("absolute");
+
+      // Optional: Change navigation bar color
+      NavigationBar.setBackgroundColorAsync(StainedGlassTheme.colors.deepPurple);
+    }
+
+    // Show immersive mode
+    StatusBar.setTranslucent(true);
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setBarStyle('light-content');
+
+    return () => {
+      // Restore navigation bar when component unmounts
+      if (Platform.OS === 'android') {
+        NavigationBar.setVisibilityAsync("visible");
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -135,7 +187,20 @@ function MainStack() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      theme={{
+        ...DarkTheme,
+        colors: {
+          ...DarkTheme.colors,
+          primary: StainedGlassTheme.colors.gold,
+          background: StainedGlassTheme.colors.deepPurple,
+          card: StainedGlassTheme.colors.deepPurple,
+          text: StainedGlassTheme.colors.parchment,
+          border: StainedGlassTheme.colors.gold,
+          notification: StainedGlassTheme.colors.ruby,
+        },
+      }}
+    >
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -144,7 +209,13 @@ function MainStack() {
       >
         {user ? (
           <>
-            <Stack.Screen name="Main" component={MainTabNavigator} />
+            <Stack.Screen
+              name="Main"
+              component={MainTabNavigator}
+              options={{
+                animation: 'fade',
+              }}
+            />
             <Stack.Screen
               name="JobDetail"
               component={JobDetailScreen}
@@ -152,8 +223,8 @@ function MainStack() {
                 headerShown: false,
                 title: "Job Details",
                 headerBackTitle: "Back",
-                presentation: 'modal',
-                animation: 'slide_from_bottom'
+                presentation: 'card',
+                animation: 'fade'
               }}
             />
           </>
@@ -161,7 +232,10 @@ function MainStack() {
           <Stack.Screen
             name="Login"
             component={LoginScreen}
-            options={{ animation: 'fade' }}
+            options={{
+              animation: 'fade',
+              contentStyle: { backgroundColor: StainedGlassTheme.colors.deepPurple }
+            }}
           />
         )}
       </Stack.Navigator>
@@ -174,6 +248,10 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: StainedGlassTheme.colors.deepPurple,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -194,17 +272,20 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'column',
-    borderRadius: 24,
-    marginHorizontal: 20,
-    marginBottom: 12, // Add bottom margin for floating effect
+    borderRadius: 0, // Changed to 0 for full width
+    marginHorizontal: 0, // No margin for full width
+    marginBottom: 0,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
     borderColor: StainedGlassTheme.colors.goldDark,
     backgroundColor: StainedGlassTheme.colors.deepPurple,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: -5 },
     shadowOpacity: 0.4,
-    shadowRadius: 20,
+    shadowRadius: 10,
     elevation: 15,
     minHeight: 70,
   },

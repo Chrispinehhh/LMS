@@ -23,7 +23,7 @@ class DriverJobViewSet(viewsets.ReadOnlyModelViewSet):
         return Job.objects.none()
 
     @action(detail=True, methods=['post'], serializer_class=DriverJobUpdateSerializer)
-    def update_status(self, request, pk=None):
+    def update_status(self, request, job_number=None, pk=None):
         job = self.get_object()
         serializer = self.get_serializer(data=request.data)
         
@@ -55,7 +55,7 @@ class DriverJobViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], url_path='upload-pod')
-    def upload_pod(self, request, pk=None):
+    def upload_pod(self, request, job_number=None, pk=None):
         job = self.get_object()
         
         if not hasattr(job, 'shipment'):

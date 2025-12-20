@@ -14,7 +14,7 @@ interface StainedGlassBackgroundProps {
 
 export const StainedGlassBackground: React.FC<StainedGlassBackgroundProps> = ({
     children,
-    showPattern = true,
+    showPattern = false,
     variant = 'gradient',
 }) => {
     // You can use a local image or a pattern

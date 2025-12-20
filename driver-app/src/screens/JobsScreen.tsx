@@ -9,14 +9,14 @@ import {
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
 import { ShipmentListItem } from '../types';
-import { ScreenBackground } from '../components/ScreenBackground';
+import { ScreenWrapper } from '../components/ScreenWrapper';
 import { StainedGlassCard } from '../components/StainedGlassCard';
 import { SSLogisticsLogo } from '../components/SSLogisticsLogo';
 import { StainedGlassTheme, Typography, Spacing, BorderRadius } from '../styles/globalStyles';
@@ -29,9 +29,7 @@ const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () =>
   const statusConfig = getStatusConfig(item.status);
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
+    <View
       style={styles.listItemTouchable}
     >
       <StainedGlassCard style={styles.jobCard}>
@@ -103,33 +101,54 @@ const JobListItem = ({ item, onPress }: { item: ShipmentListItem, onPress: () =>
         </View>
 
         {/* View Details Button */}
-        <TouchableOpacity style={styles.viewDetailsButton}>
+        <TouchableOpacity
+          style={styles.viewDetailsButton}
+          onPress={onPress}
+          activeOpacity={0.7}
+        >
           <Text style={styles.viewDetailsText}>View Job Details</Text>
           <Ionicons name="chevron-forward" size={16} color={StainedGlassTheme.colors.gold} />
         </TouchableOpacity>
       </StainedGlassCard>
-    </TouchableOpacity>
+    </View>
   );
 };
 
 // Helper function to get status config
+// Helper function to get status config
 const getStatusConfig = (status: ShipmentListItem['status']) => {
   switch (status) {
     case 'PENDING':
+    case 'ORDER_PLACED':
       return {
         color: '#FBBF24', // Gold
         bgColor: 'rgba(251, 191, 36, 0.15)',
         icon: 'time-outline',
         label: 'Pending'
       };
-    case 'IN_TRANSIT':
+    case 'PICKED_UP':
       return {
         color: '#60A5FA', // Blue
         bgColor: 'rgba(96, 165, 250, 0.15)',
+        icon: 'cube-outline',
+        label: 'Picked Up'
+      };
+    case 'IN_TRANSIT':
+      return {
+        color: '#A78BFA', // Purple
+        bgColor: 'rgba(167, 139, 250, 0.15)',
         icon: 'car-outline',
         label: 'In Transit'
       };
+    case 'OUT_FOR_DELIVERY':
+      return {
+        color: '#818CF8', // Indigo
+        bgColor: 'rgba(129, 140, 248, 0.15)',
+        icon: 'bicycle-outline',
+        label: 'Out for Delivery'
+      };
     case 'DELIVERED':
+    case 'COMPLETED':
       return {
         color: '#34D399', // Green
         bgColor: 'rgba(52, 211, 153, 0.15)',
@@ -137,6 +156,7 @@ const getStatusConfig = (status: ShipmentListItem['status']) => {
         label: 'Delivered'
       };
     case 'FAILED':
+    case 'CANCELLED':
       return {
         color: '#F87171', // Red
         bgColor: 'rgba(248, 113, 113, 0.15)',
@@ -167,16 +187,20 @@ export default function JobsScreen() {
 
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'pending' | 'in_transit'>('all');
 
-  // Filter to only show active jobs (not delivered)
+  // Filter to only show active jobs (not delivered or cancelled)
   const activeJobs = assignedJobs?.filter(
-    (job) => job.status === 'PENDING' || job.status === 'IN_TRANSIT'
+    (job) => !['DELIVERED', 'COMPLETED', 'CANCELLED', 'FAILED'].includes(job.status)
   ) || [];
 
   // Apply additional filter based on selected chip
   const filteredJobs = activeJobs.filter((job) => {
     if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'pending') return job.status === 'PENDING';
-    if (selectedFilter === 'in_transit') return job.status === 'IN_TRANSIT';
+    if (selectedFilter === 'pending') {
+      return ['PENDING', 'ORDER_PLACED'].includes(job.status);
+    }
+    if (selectedFilter === 'in_transit') {
+      return ['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(job.status);
+    }
     return true;
   });
 
@@ -242,74 +266,72 @@ export default function JobsScreen() {
   };
 
   return (
-    <ScreenBackground>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.userSection}>
-              <SSLogisticsLogo size="medium" variant="badge" />
-              <View style={styles.userInfo}>
-                <Text style={styles.greeting}>{getTimeBasedGreeting()},</Text>
-                <Text style={styles.userName}>
-                  {user?.first_name || 'Driver'}! 👋
-                </Text>
-              </View>
+    <ScreenWrapper style={styles.safeArea}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View style={styles.userSection}>
+            <SSLogisticsLogo size="small" variant="badge" />
+            <View style={styles.userInfo}>
+              <Text style={styles.greeting}>{getTimeBasedGreeting()},</Text>
+              <Text style={styles.userName}>
+                {user?.first_name || 'Driver'}! 👋
+              </Text>
             </View>
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-              <Ionicons name="log-out-outline" size={18} color={StainedGlassTheme.colors.parchmentLight} />
-              <Text style={styles.logoutText}>Log Out</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Filter Chips */}
-        <View style={styles.filterContainer}>
-          <TouchableOpacity
-            style={[styles.filterChip, selectedFilter === 'all' && styles.filterChipActive]}
-            onPress={() => setSelectedFilter('all')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.filterChipText, selectedFilter === 'all' && styles.filterChipTextActive]}>
-              All ({activeJobs.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterChip, selectedFilter === 'pending' && styles.filterChipActive]}
-            onPress={() => setSelectedFilter('pending')}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="hourglass-outline"
-              size={14}
-              color={selectedFilter === 'pending' ? StainedGlassTheme.colors.gold : StainedGlassTheme.colors.parchmentLight}
-            />
-            <Text style={[styles.filterChipText, selectedFilter === 'pending' && styles.filterChipTextActive]}>
-              Pending
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterChip, selectedFilter === 'in_transit' && styles.filterChipActive]}
-            onPress={() => setSelectedFilter('in_transit')}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="car-outline"
-              size={14}
-              color={selectedFilter === 'in_transit' ? StainedGlassTheme.colors.gold : StainedGlassTheme.colors.parchmentLight}
-            />
-            <Text style={[styles.filterChipText, selectedFilter === 'in_transit' && styles.filterChipTextActive]}>
-              In Transit
-            </Text>
+          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <Ionicons name="log-out-outline" size={18} color={StainedGlassTheme.colors.parchmentLight} />
+            <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Content */}
-        {renderContent()}
-      </SafeAreaView>
-    </ScreenBackground>
+      {/* Filter Chips */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'all' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('all')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'all' && styles.filterChipTextActive]}>
+            All ({activeJobs.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'pending' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('pending')}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="hourglass-outline"
+            size={14}
+            color={selectedFilter === 'pending' ? StainedGlassTheme.colors.gold : StainedGlassTheme.colors.parchmentLight}
+          />
+          <Text style={[styles.filterChipText, selectedFilter === 'pending' && styles.filterChipTextActive]}>
+            Pending
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'in_transit' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('in_transit')}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="car-outline"
+            size={14}
+            color={selectedFilter === 'in_transit' ? StainedGlassTheme.colors.gold : StainedGlassTheme.colors.parchmentLight}
+          />
+          <Text style={[styles.filterChipText, selectedFilter === 'in_transit' && styles.filterChipTextActive]}>
+            In Transit
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      {renderContent()}
+    </ScreenWrapper>
   );
 }
 
@@ -651,3 +673,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
 });
+

@@ -7,10 +7,10 @@ import {
     TouchableOpacity,
     ScrollView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useAuth } from '../context/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { ScreenBackground } from '../components/ScreenBackground';
+import { ScreenWrapper } from '../components/ScreenWrapper';
 import { StainedGlassCard } from '../components/StainedGlassCard';
 import { StainedGlassTheme, Typography, Spacing, BorderRadius } from '../styles/globalStyles';
 import { SSLogisticsLogo } from '../components/SSLogisticsLogo';
@@ -24,158 +24,149 @@ export default function ProfileScreen() {
     };
 
     return (
-        <ScreenBackground>
-            <SafeAreaView style={styles.container} edges={['top']}>
-                <ScrollView
-                    style={styles.scrollView}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
-                >
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <View style={styles.logoContainer}>
-                            <SSLogisticsLogo size="medium" variant="badge" />
-                        </View>
-                        <Text style={styles.headerTitle}>My Profile</Text>
-                        <Text style={styles.headerSubtitle}>Driver Account</Text>
+        <ScreenWrapper style={styles.container}>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <View style={styles.logoContainer}>
+                        <SSLogisticsLogo size="medium" variant="badge" />
                     </View>
+                    <Text style={styles.headerTitle}>My Profile</Text>
+                    <Text style={styles.headerSubtitle}>Driver Account</Text>
+                </View>
 
-                    {/* Profile Card */}
-                    <StainedGlassCard style={styles.profileCard}>
-                        <View style={styles.avatarSection}>
-                            <View style={styles.avatarContainer}>
-                                <Text style={styles.avatarText}>
-                                    {user?.first_name?.charAt(0)?.toUpperCase() || 'D'}
-                                    {user?.last_name?.charAt(0)?.toUpperCase() || ''}
-                                </Text>
-                                <View style={styles.onlineIndicator} />
-                            </View>
-                            <View style={styles.userInfo}>
-                                <Text style={styles.userName}>
-                                    {user?.first_name} {user?.last_name}
-                                </Text>
-                                <View style={styles.roleBadge}>
-                                    <Ionicons name="shield-checkmark" size={14} color={StainedGlassTheme.colors.gold} />
-                                    <Text style={styles.userRole}>Official Driver</Text>
-                                </View>
-                                <Text style={styles.userEmail}>{user?.email}</Text>
-                            </View>
+                {/* Profile Card */}
+                <StainedGlassCard style={styles.profileCard}>
+                    <View style={styles.avatarSection}>
+                        <View style={styles.avatarContainer}>
+                            <Text style={styles.avatarText}>
+                                {user?.first_name?.charAt(0)?.toUpperCase() || 'D'}
+                                {user?.last_name?.charAt(0)?.toUpperCase() || ''}
+                            </Text>
+                            <View style={styles.onlineIndicator} />
                         </View>
-                    </StainedGlassCard>
-
-                    {/* Stats Card */}
-                    <StainedGlassCard style={styles.statsCard}>
-                        <Text style={styles.statsTitle}>Performance Stats</Text>
-                        <View style={styles.statsContainer}>
-                            <View style={styles.statBox}>
-                                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(251, 191, 36, 0.15)' }]}>
-                                    <Ionicons name="star" size={20} color="#FBBF24" />
-                                </View>
-                                <Text style={styles.statValue}>4.9</Text>
-                                <Text style={styles.statLabel}>Rating</Text>
+                        <View style={styles.userInfo}>
+                            <Text style={styles.userName}>
+                                {user?.first_name} {user?.last_name}
+                            </Text>
+                            <View style={styles.roleBadge}>
+                                <Ionicons name="shield-checkmark" size={14} color={StainedGlassTheme.colors.gold} />
+                                <Text style={styles.userRole}>Official Driver</Text>
                             </View>
-
-                            <View style={styles.statDivider} />
-
-                            <View style={styles.statBox}>
-                                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                                    <Ionicons name="car" size={20} color="#3B82F6" />
-                                </View>
-                                <Text style={styles.statValue}>124</Text>
-                                <Text style={styles.statLabel}>Trips</Text>
-                            </View>
-
-                            <View style={styles.statDivider} />
-
-                            <View style={styles.statBox}>
-                                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                                    <Ionicons name="time" size={20} color="#22C55E" />
-                                </View>
-                                <Text style={styles.statValue}>98%</Text>
-                                <Text style={styles.statLabel}>On Time</Text>
-                            </View>
+                            <Text style={styles.userEmail}>{user?.email}</Text>
                         </View>
-                    </StainedGlassCard>
+                    </View>
+                </StainedGlassCard>
 
-                    {/* Menu Section */}
-                    <StainedGlassCard style={styles.menuCard}>
-                        <Text style={styles.menuTitle}>Account & Settings</Text>
-
-                        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-                            <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(96, 165, 250, 0.15)' }]}>
-                                <Ionicons name="car-sport-outline" size={22} color="#60A5FA" />
+                {/* Stats Card */}
+                <StainedGlassCard style={styles.statsCard}>
+                    <Text style={styles.statsTitle}>Performance Stats</Text>
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statBox}>
+                            <View style={[styles.statIconContainer, { backgroundColor: 'rgba(251, 191, 36, 0.15)' }]}>
+                                <Ionicons name="star" size={20} color="#FBBF24" />
                             </View>
-                            <View style={styles.menuTextContainer}>
-                                <Text style={styles.menuText}>Vehicle Information</Text>
-                                <Text style={styles.menuSubtext}>Manage your vehicle details</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
-                        </TouchableOpacity>
-
-                        <View style={styles.menuDivider} />
-
-                        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-                            <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(167, 139, 250, 0.15)' }]}>
-                                <Ionicons name="settings-outline" size={22} color="#A78BFA" />
-                            </View>
-                            <View style={styles.menuTextContainer}>
-                                <Text style={styles.menuText}>Account Settings</Text>
-                                <Text style={styles.menuSubtext}>Update preferences & notifications</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
-                        </TouchableOpacity>
-
-                        <View style={styles.menuDivider} />
-
-                        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-                            <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(251, 191, 36, 0.15)' }]}>
-                                <Ionicons name="help-circle-outline" size={22} color="#FBBF24" />
-                            </View>
-                            <View style={styles.menuTextContainer}>
-                                <Text style={styles.menuText}>Help & Support</Text>
-                                <Text style={styles.menuSubtext}>Get assistance & contact dispatch</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
-                        </TouchableOpacity>
-
-                        <View style={styles.menuDivider} />
-
-                        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-                            <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(52, 211, 153, 0.15)' }]}>
-                                <Ionicons name="document-text-outline" size={22} color="#34D399" />
-                            </View>
-                            <View style={styles.menuTextContainer}>
-                                <Text style={styles.menuText}>Documents</Text>
-                                <Text style={styles.menuSubtext}>Licenses, insurance & permits</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
-                        </TouchableOpacity>
-                    </StainedGlassCard>
-
-                    {/* Logout Button */}
-                    <TouchableOpacity
-                        style={styles.logoutButton}
-                        onPress={handleLogout}
-                        activeOpacity={0.8}
-                    >
-                        <View style={styles.logoutIconContainer}>
-                            <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+                            <Text style={styles.statValue}>4.9</Text>
+                            <Text style={styles.statLabel}>Rating</Text>
                         </View>
-                        <Text style={styles.logoutText}>Log Out</Text>
+
+                        <View style={styles.statDivider} />
+
+                        <View style={styles.statBox}>
+                            <View style={[styles.statIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                                <Ionicons name="car" size={20} color="#3B82F6" />
+                            </View>
+                            <Text style={styles.statValue}>124</Text>
+                            <Text style={styles.statLabel}>Trips</Text>
+                        </View>
+
+                        <View style={styles.statDivider} />
+
+                        <View style={styles.statBox}>
+                            <View style={[styles.statIconContainer, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                                <Ionicons name="time" size={20} color="#22C55E" />
+                            </View>
+                            <Text style={styles.statValue}>98%</Text>
+                            <Text style={styles.statLabel}>On Time</Text>
+                        </View>
+                    </View>
+                </StainedGlassCard>
+
+                {/* Menu Section */}
+                <StainedGlassCard style={styles.menuCard}>
+                    <Text style={styles.menuTitle}>Account & Settings</Text>
+
+                    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+                        <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(96, 165, 250, 0.15)' }]}>
+                            <Ionicons name="car-sport-outline" size={22} color="#60A5FA" />
+                        </View>
+                        <View style={styles.menuTextContainer}>
+                            <Text style={styles.menuText}>Vehicle Information</Text>
+                            <Text style={styles.menuSubtext}>Manage your vehicle details</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
                     </TouchableOpacity>
 
-                    {/* Footer */}
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>
-                            S&S Logistics Driver Portal v1.0
-                        </Text>
-                        <Text style={styles.footerSubtext}>
-                            Premium Transport Solutions
-                        </Text>
+                    <View style={styles.menuDivider} />
+
+                    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+                        <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(167, 139, 250, 0.15)' }]}>
+                            <Ionicons name="settings-outline" size={22} color="#A78BFA" />
+                        </View>
+                        <View style={styles.menuTextContainer}>
+                            <Text style={styles.menuText}>Account Settings</Text>
+                            <Text style={styles.menuSubtext}>Update preferences & notifications</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
+                    </TouchableOpacity>
+
+                    <View style={styles.menuDivider} />
+
+                    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+                        <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(251, 191, 36, 0.15)' }]}>
+                            <Ionicons name="help-circle-outline" size={22} color="#FBBF24" />
+                        </View>
+                        <View style={styles.menuTextContainer}>
+                            <Text style={styles.menuText}>Help & Support</Text>
+                            <Text style={styles.menuSubtext}>Get assistance & contact dispatch</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
+                    </TouchableOpacity>
+
+                    <View style={styles.menuDivider} />
+
+                    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+                        <View style={[styles.menuIconContainer, { backgroundColor: 'rgba(52, 211, 153, 0.15)' }]}>
+                            <Ionicons name="document-text-outline" size={22} color="#34D399" />
+                        </View>
+                        <View style={styles.menuTextContainer}>
+                            <Text style={styles.menuText}>Documents</Text>
+                            <Text style={styles.menuSubtext}>Licenses, insurance & permits</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={StainedGlassTheme.colors.goldLight} />
+                    </TouchableOpacity>
+                </StainedGlassCard>
+
+                {/* Logout Button */}
+                <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.logoutIconContainer}>
+                        <Ionicons name="log-out-outline" size={24} color="#EF4444" />
                     </View>
-                </ScrollView>
-            </SafeAreaView>
-        </ScreenBackground>
+                    <Text style={styles.logoutText}>Log Out</Text>
+                </TouchableOpacity>
+
+                {/* Footer */}
+
+            </ScrollView>
+        </ScreenWrapper >
     );
 }
 

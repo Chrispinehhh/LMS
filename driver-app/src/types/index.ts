@@ -1,7 +1,17 @@
 // src/types/index.ts
 
 // Reusable status type
-export type ShipmentStatus = 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | 'CANCELLED';
+export type ShipmentStatus =
+  | 'ORDER_PLACED'
+  | 'PENDING'
+  | 'ASSIGNED'
+  | 'PICKED_UP'
+  | 'IN_TRANSIT'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED';
 
 export interface ShipmentListItem {
   id: string; // The URL/UUID

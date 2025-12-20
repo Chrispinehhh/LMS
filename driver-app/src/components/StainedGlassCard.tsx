@@ -18,7 +18,7 @@ export const StainedGlassCard: React.FC<StainedGlassCardProps> = ({
   style,
   intensity = StainedGlassTheme.glass.intensity,
   tint = StainedGlassTheme.glass.tint,
-  showAccents = true,
+  showAccents = false,
   showLogoAccents = false,
   ...props
 }) => {
@@ -51,7 +51,7 @@ export const StainedGlassCard: React.FC<StainedGlassCardProps> = ({
               borderRadius: 50,
             }
           ]} />
-          
+
           {/* Bottom-right accent */}
           <View style={[
             StainedGlassStyles.glassAccent,
@@ -64,7 +64,7 @@ export const StainedGlassCard: React.FC<StainedGlassCardProps> = ({
               borderRadius: 60,
             }
           ]} />
-          
+
           {/* Center accent */}
           <View style={[
             StainedGlassStyles.glassAccent,
@@ -77,7 +77,7 @@ export const StainedGlassCard: React.FC<StainedGlassCardProps> = ({
               borderRadius: 40,
             }
           ]} />
-          
+
           {/* Special logo area accents (optional) */}
           {showLogoAccents && (
             <>
@@ -93,7 +93,7 @@ export const StainedGlassCard: React.FC<StainedGlassCardProps> = ({
                   borderRadius: 30,
                 }
               ]} />
-              
+
               {/* Logo right accent */}
               <View style={[
                 StainedGlassStyles.glassAccent,
@@ -110,7 +110,7 @@ export const StainedGlassCard: React.FC<StainedGlassCardProps> = ({
           )}
         </View>
       )}
-      
+
       {/* Content */}
       <View style={{ zIndex: 1 }}>
         {children}

@@ -9,8 +9,7 @@ import {
     ActivityIndicator,
     RefreshControl
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScreenBackground } from '../components/ScreenBackground';
+import { ScreenWrapper } from '../components/ScreenWrapper';
 import { StainedGlassCard } from '../components/StainedGlassCard';
 import {
     StainedGlassTheme,
@@ -108,70 +107,68 @@ export default function HistoryScreen() {
     };
 
     return (
-        <ScreenBackground>
-            <SafeAreaView style={styles.container} edges={['top']}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <View style={styles.headerContent}>
-                        <View style={styles.titleSection}>
-                            <SSLogisticsLogo size="medium" variant="badge" />
-                            <View style={styles.titleInfo}>
-                                <Text style={styles.title}>Job History</Text>
-                                <Text style={styles.subtitle}>
-                                    {history.length} completed {history.length === 1 ? 'job' : 'jobs'}
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {isLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={StainedGlassTheme.colors.gold} />
-                        <Text style={styles.loadingText}>Loading history...</Text>
-                    </View>
-                ) : history.length > 0 ? (
-                    <ScrollView
-                        style={styles.scrollView}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={isLoading}
-                                onRefresh={mutate}
-                                tintColor={StainedGlassTheme.colors.gold}
-                            />
-                        }
-                    >
-                        {history.map(renderHistoryItem)}
-                    </ScrollView>
-                ) : (
-                    <View style={styles.emptyState}>
-                        <View style={styles.emptyIconContainer}>
-                            <Ionicons
-                                name="time-outline"
-                                size={64}
-                                color={StainedGlassTheme.colors.goldLight}
-                            />
-                        </View>
-                        <Text style={styles.emptyTitle}>No History Yet</Text>
-                        <Text style={styles.emptyText}>
-                            Completed jobs will appear here with detailed records.
-                        </Text>
-                        <Text style={styles.emptySubtext}>
-                            Check back after completing your first delivery.
-                        </Text>
-
-                        <View style={styles.emptyBrand}>
-                            <SSLogisticsLogo size="small" variant="icon" />
-                            <Text style={styles.emptyBrandText}>
-                                S&S Logistics History
+        <ScreenWrapper style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <View style={styles.headerContent}>
+                    <View style={styles.titleSection}>
+                        <SSLogisticsLogo size="small" variant="badge" />
+                        <View style={styles.titleInfo}>
+                            <Text style={styles.title}>Job History</Text>
+                            <Text style={styles.subtitle}>
+                                {history.length} completed {history.length === 1 ? 'job' : 'jobs'}
                             </Text>
                         </View>
                     </View>
-                )}
-            </SafeAreaView>
-        </ScreenBackground>
+                </View>
+            </View>
+
+            {isLoading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={StainedGlassTheme.colors.gold} />
+                    <Text style={styles.loadingText}>Loading history...</Text>
+                </View>
+            ) : history.length > 0 ? (
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isLoading}
+                            onRefresh={mutate}
+                            tintColor={StainedGlassTheme.colors.gold}
+                        />
+                    }
+                >
+                    {history.map(renderHistoryItem)}
+                </ScrollView>
+            ) : (
+                <View style={styles.emptyState}>
+                    <View style={styles.emptyIconContainer}>
+                        <Ionicons
+                            name="time-outline"
+                            size={64}
+                            color={StainedGlassTheme.colors.goldLight}
+                        />
+                    </View>
+                    <Text style={styles.emptyTitle}>No History Yet</Text>
+                    <Text style={styles.emptyText}>
+                        Completed jobs will appear here with detailed records.
+                    </Text>
+                    <Text style={styles.emptySubtext}>
+                        Check back after completing your first delivery.
+                    </Text>
+
+                    <View style={styles.emptyBrand}>
+                        <SSLogisticsLogo size="medium" variant="badge" />
+                        <Text style={styles.emptyBrandText}>
+                            S&S Logistics History
+                        </Text>
+                    </View>
+                </View>
+            )}
+        </ScreenWrapper>
     );
 }
 

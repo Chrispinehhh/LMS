@@ -21,8 +21,8 @@ export const ScreenBackground: React.FC<ScreenBackgroundProps> = ({ children }) 
             {/* Decorative orbs for depth */}
             <View style={styles.backgroundGradient}>
                 <View style={[styles.orb, styles.orbTop]} />
-                <View style={[styles.orb, styles.orbMiddle]} />
                 <View style={[styles.orb, styles.orbBottom]} />
+                <View style={[styles.orb, styles.orbAccent]} />
             </View>
 
             {children}
@@ -48,24 +48,30 @@ const styles = StyleSheet.create({
         opacity: 0.15,
     },
     orbTop: {
-        top: -width * 0.4,
-        left: -width * 0.2,
-        width: width * 1.2,
-        height: width * 1.2,
-        backgroundColor: '#FFB347', // Gold/Orange
-    },
-    orbMiddle: {
-        top: height * 0.35,
-        right: -width * 0.3,
-        width: width * 0.9,
-        height: width * 0.9,
-        backgroundColor: '#9D5CFF', // Purple
+        top: -width * 0.45,
+        left: -width * 0.25,
+        width: width * 1.6,
+        height: width * 1.6,
+        backgroundColor: '#FFB347', // Warm Gold
+        opacity: 0.1,
+        transform: [{ rotate: '20deg' }],
     },
     orbBottom: {
-        bottom: -width * 0.3,
-        left: -width * 0.25,
-        width: width * 1.1,
-        height: width * 1.1,
-        backgroundColor: '#4A90E2', // Blue
+        bottom: -width * 0.45,
+        right: -width * 0.25,
+        width: width * 1.6,
+        height: width * 1.6,
+        backgroundColor: '#6A0DAD', // Deep Purple
+        opacity: 0.12,
+        transform: [{ rotate: '-20deg' }],
+    },
+    orbAccent: {
+        top: height * 0.35,
+        right: -width * 0.4,
+        width: width * 1.2,
+        height: width * 1.2,
+        backgroundColor: '#E11D48', // Ruby/Rose support 
+        opacity: 0.08,
+        transform: [{ scale: 1.2 }],
     },
 });
