@@ -417,7 +417,7 @@ export default function JobDetailScreen() {
       {/* Action Footer */}
       {job.status !== 'DELIVERED' && job.status !== 'FAILED' && (
         <View style={[styles.actionFooter, { paddingBottom: insets.bottom + Spacing.md }]}>
-          {job.status === 'PENDING' ? (
+          {job.status === 'PENDING' || job.status === 'ORDER_PLACED' ? (
             <TouchableOpacity
               style={styles.primaryActionButton}
               onPress={() => handleUpdateStatus('IN_TRANSIT')}
@@ -429,6 +429,21 @@ export default function JobDetailScreen() {
                 <>
                   <Text style={styles.primaryActionText}>Start Trip</Text>
                   <Ionicons name="arrow-forward" size={20} color={StainedGlassTheme.colors.parchment} />
+                </>
+              )}
+            </TouchableOpacity>
+          ) : job.status === 'IN_TRANSIT' ? (
+            <TouchableOpacity
+              style={[styles.primaryActionButton, { backgroundColor: '#60A5FA' }]}
+              onPress={() => handleUpdateStatus('PICKED_UP')}
+              disabled={statusUpdating}
+            >
+              {statusUpdating ? (
+                <ActivityIndicator color={StainedGlassTheme.colors.parchment} />
+              ) : (
+                <>
+                  <Text style={styles.primaryActionText}>Confirm Pickup</Text>
+                  <Ionicons name="cube" size={20} color={StainedGlassTheme.colors.parchment} />
                 </>
               )}
             </TouchableOpacity>
