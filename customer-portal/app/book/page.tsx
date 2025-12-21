@@ -42,6 +42,15 @@ export default function EnhancedBookingPage() {
       job_type: undefined,
       service_type: undefined,
       cargo_description: "",
+      // Residential defaults
+      room_count: 0,
+      volume_cf: 0,
+      crew_size: 0,
+      // Commercial defaults
+      weight_lbs: 0,
+      pallet_count: 0,
+      is_hazardous: false,
+      // Location defaults
       pickup_address: "",
       pickup_city: "",
       pickup_contact_person: "",
@@ -342,7 +351,7 @@ function MetricsStep() {
               <FormItem>
                 <FormLabel>Number of Rooms</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} placeholder="e.g., 3" />
+                  <Input type="number" value={field.value || 0} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} placeholder="e.g., 3" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -355,7 +364,7 @@ function MetricsStep() {
               <FormItem>
                 <FormLabel>Preferred Crew Size (Optional)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)} placeholder="e.g., 2" />
+                  <Input type="number" value={field.value || 0} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} placeholder="e.g., 2" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -371,7 +380,7 @@ function MetricsStep() {
               <FormItem>
                 <FormLabel>Weight (lbs)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} placeholder="e.g., 1500" />
+                  <Input type="number" value={field.value || 0} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} placeholder="e.g., 1500" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -384,7 +393,7 @@ function MetricsStep() {
               <FormItem>
                 <FormLabel>Pallet Count (Optional)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)} placeholder="e.g., 4" />
+                  <Input type="number" value={field.value || 0} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} placeholder="e.g., 4" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
