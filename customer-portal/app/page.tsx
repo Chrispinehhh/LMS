@@ -1,15 +1,17 @@
 import Link from 'next/link';
-import { Truck, Building2, Package, ArrowRight, ShieldCheck, Clock, CheckCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { QuoteCalculator } from '@/components/QuoteCalculator';
-import { TrustSignals } from '@/components/TrustSignals';
+import { QuickQuote } from '@/components/marketing/QuickQuote';
+import { ValuePropositions } from '@/components/marketing/ValuePropositions';
+import { StatsSection } from '@/components/marketing/StatsSection';
+import { HowItWorks } from '@/components/marketing/HowItWorks';
+import { Testimonials } from '@/components/marketing/Testimonials';
 import FleetShowcase from '@/components/FleetShowcase';
-import { ProcessSteps } from '@/components/ProcessSteps';
 
 export default function HomePage() {
   return (
     <div className="relative bg-background min-h-screen">
-      {/* Hero Section with Quote Calculator */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-background via-muted/30 to-background py-20 lg:py-32 overflow-hidden">
         {/* Abstract shapes */}
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -21,154 +23,97 @@ export default function HomePage() {
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-8 border border-primary/20">
                 <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
-                <span className="text-sm font-semibold text-primary">Now Serving 150+ Cities Nationwide</span>
+                <span className="text-sm font-semibold text-primary">Trusted by 12,000+ Customers</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-foreground leading-[1.1] mb-6">
-                Moving & Freight,{' '}
+                Logistics That{' '}
                 <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-emerald-500 bg-clip-text text-transparent">
-                  Reimagined.
+                  Works for You
                 </span>
               </h1>
 
               <p className="text-xl text-muted-foreground leading-relaxed mb-10 max-w-xl">
-                The premium choice for residential moving and commercial logistics. We combine white-glove service with real-time technology.
+                Professional moving and freight services with transparent pricing, real-time tracking, and white-glove care.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Button asChild size="lg" className="h-14 px-8 text-lg font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-                  <Link href="/book">Get Instant Quote</Link>
+                  <Link href="/book">Start Your Quote <ArrowRight className="ml-2 h-5 w-5" /></Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-14 px-8 text-lg font-semibold border-2 hover:bg-muted/50">
-                  <Link href="/services">Explore Services</Link>
+                  <Link href="/track">Track Shipment</Link>
                 </Button>
               </div>
 
-              <div className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
+              {/* Trust indicators */}
+              <div className="flex flex-wrap items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-emerald-500" />
-                  <span>Fully Insured</span>
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-background" />
+                    ))}
+                  </div>
+                  <span className="text-muted-foreground font-medium">50,000+ Deliveries</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-emerald-500" />
-                  <span>Real-Time Tracking</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-emerald-500" />
-                  <span>24/7 Support</span>
-                </div>
+                <div className="text-muted-foreground">•</div>
+                <div className="text-muted-foreground font-medium">99% On-Time Rate</div>
+                <div className="text-muted-foreground">•</div>
+                <div className="text-muted-foreground font-medium">Fully Insured</div>
               </div>
             </div>
 
-            {/* Right: Quote Calculator */}
+            {/* Right: Quick Quote Widget */}
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-20"></div>
               <div className="relative">
-                <QuoteCalculator />
+                <QuickQuote />
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Stats Section */}
+      <StatsSection />
+
+      {/* Value Propositions */}
+      <ValuePropositions />
 
       {/* How It Works */}
-      <ProcessSteps />
+      <HowItWorks />
 
-      {/* Services Section */}
-      <section className="py-24 bg-background">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight mb-4">
-              Solutions for Every Scale
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Tailored logistics services delivering precision and care
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {/* Residential Moving Card */}
-            <div className="group bg-card rounded-3xl border border-border p-8 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-blue-500/20">
-                <Truck className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">Residential Moving</h3>
-              <p className="text-muted-foreground leading-relaxed mb-8 min-h-[4.5rem]">
-                Premium white-glove moving services. We handle your belongings with the care they deserve, from packing to unboxing.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {["Full Packing Service", "Premium Furniture Protection", "Climate-Controlled Transport", "Dedicated Move Coordinator"].map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 text-sm font-medium text-foreground/80">
-                    <CheckCircle className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild className="w-full bg-secondary/50 hover:bg-secondary text-foreground font-semibold">
-                <Link href="/services/residential">Learn More</Link>
-              </Button>
-            </div>
-
-            {/* Corporate Logistics */}
-            <div className="group bg-card rounded-3xl border border-border p-8 shadow-sm hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-1">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/20">
-                <Building2 className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">Corporate Logistics</h3>
-              <p className="text-muted-foreground leading-relaxed mb-8 min-h-[4.5rem]">
-                Seamless office relocations and supply chain solutions designed to keep your business moving without downtime.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {["After-Hours Service", "IT Equipment Handling", "Asset Inventory Management", "Confidential Document Transport"].map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 text-sm font-medium text-foreground/80">
-                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild className="w-full bg-secondary/50 hover:bg-secondary text-foreground font-semibold">
-                <Link href="/services/commercial">Learn More</Link>
-              </Button>
-            </div>
-
-            {/* Express Courier */}
-            <div className="group bg-card rounded-3xl border border-border p-8 shadow-sm hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-1">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-amber-500/20">
-                <Package className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">Express Courier</h3>
-              <p className="text-muted-foreground leading-relaxed mb-8 min-h-[4.5rem]">
-                Rapid, secure delivery for time-sensitive documents and improved small cargo logistics across the city.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {["Same-Day Delivery", "Real-Time GPS Tracking", "Proof of Delivery (Photo)", "Secure Chain of Custody"].map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 text-sm font-medium text-foreground/80">
-                    <CheckCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild className="w-full bg-secondary/50 hover:bg-secondary text-foreground font-semibold">
-                <Link href="/services/courier">Learn More</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="text-center mt-16">
-            <Button asChild variant="outline" size="lg" className="h-12 border-2 px-8 font-semibold">
-              <Link href="/services">
-                View All Services <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      {/* Testimonials */}
+      <Testimonials />
 
       {/* Fleet Showcase */}
-      <FleetShowcase />
+      <div className="bg-gray-50 dark:bg-slate-950/50">
+        <FleetShowcase />
+      </div>
 
-      {/* Trust Signals */}
-      <TrustSignals />
+      {/* Final CTA Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-primary to-cyan-600">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready to Move Smarter?
+          </h2>
+          <p className="text-xl text-white/90 mb-8">
+            Join thousands of satisfied customers and experience logistics done right.
+          </p>
+          <Button
+            asChild
+            size="lg"
+            variant="secondary"
+            className="h-16 px-12 text-lg font-bold shadow-2xl hover:scale-105 transition-transform"
+          >
+            <Link href="/book">
+              Get Your Free Quote Now
+              <ArrowRight className="ml-3 h-6 w-6" />
+            </Link>
+          </Button>
+          <p className="text-white/80 text-sm mt-6">No credit card required • Instant pricing • Book in minutes</p>
+        </div>
+      </section>
     </div>
   );
 }
