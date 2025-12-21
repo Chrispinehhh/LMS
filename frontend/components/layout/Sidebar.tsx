@@ -11,7 +11,8 @@ import {
     Settings,
     X,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    Calculator
 } from "lucide-react";
 import { ModeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/context/AuthContext";
@@ -119,6 +120,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <>
                             <SectionLabel label="Admin" />
                             <NavItem href="/users" icon={Settings} label="User Management" />
+                            <NavItem href="/settings/calculator" icon={Calculator} label="Calculator Settings" />
                         </>
                     )}
                 </nav>
