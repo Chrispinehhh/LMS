@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Truck, Package, MapPin, ArrowRight, Calculator } from 'lucide-react';
+import { Truck, Package, MapPin, ArrowRight, Calculator, Home, Building2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,7 +126,7 @@ export function QuoteCalculator() {
                                 : 'border-input hover:border-primary/50'
                                 }`}
                         >
-                            🏠 Residential
+                            <Home className="w-4 h-4 inline mr-1" /> Residential
                         </button>
                         <button
                             type="button"
@@ -136,7 +136,7 @@ export function QuoteCalculator() {
                                 : 'border-input hover:border-primary/50'
                                 }`}
                         >
-                            🏢 Commercial
+                            <Building2 className="w-4 h-4 inline mr-1" /> Commercial
                         </button>
                     </div>
                     {errors.jobType && (
@@ -232,7 +232,8 @@ export function QuoteCalculator() {
                 {jobType === 'RESIDENTIAL' && (
                     <div>
                         <Label htmlFor="roomCount" className="text-muted-foreground font-medium mb-2 flex items-center gap-2">
-                            🏠 Number of Rooms
+                            <Home className="h-4 w-4 text-primary" />
+                            Number of Rooms
                         </Label>
                         <Input
                             id="roomCount"
@@ -250,7 +251,8 @@ export function QuoteCalculator() {
                     <>
                         <div>
                             <Label htmlFor="palletCount" className="text-muted-foreground font-medium mb-2 flex items-center gap-2">
-                                📦 Pallet Count (Optional)
+                                <Package className="h-4 w-4 text-primary" />
+                                Pallet Count (Optional)
                             </Label>
                             <Input
                                 id="palletCount"
@@ -270,7 +272,8 @@ export function QuoteCalculator() {
                                 className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
                             />
                             <Label htmlFor="isHazardous" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
-                                ⚠️ Contains Hazardous Materials
+                                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                                Contains Hazardous Materials
                             </Label>
                         </div>
                     </>
