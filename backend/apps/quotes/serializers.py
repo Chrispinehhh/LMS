@@ -6,6 +6,15 @@ class QuoteRequestSerializer(serializers.Serializer):
     """Serializer for incoming quote requests"""
     origin = serializers.CharField(max_length=255, help_text="Origin city/address")
     destination = serializers.CharField(max_length=255, help_text="Destination city/address")
+    
+    # Job classification
+    job_type = serializers.ChoiceField(
+        choices=[('RESIDENTIAL', 'Residential'), ('COMMERCIAL', 'Commercial')],
+        required=False,
+        default='COMMERCIAL',
+        help_text="Type of job for better pricing"
+    )
+    
     service_type = serializers.ChoiceField(
         choices=[
             ('RESIDENTIAL_MOVING', 'Residential Moving'),
@@ -15,6 +24,8 @@ class QuoteRequestSerializer(serializers.Serializer):
         ],
         help_text="Type of service needed"
     )
+    
+    # Metrics
     weight = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -22,6 +33,17 @@ class QuoteRequestSerializer(serializers.Serializer):
         allow_null=True,
         help_text="Estimated weight in pounds"
     )
+    room_count = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="Number of rooms (residential)"
+    )
+    pallet_count = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="Number of pallets (commercial)"
+    )
+    
     distance = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -36,6 +58,8 @@ class QuoteResponseSerializer(serializers.Serializer):
     estimated_price = serializers.DecimalField(max_digits=10, decimal_places=2)
     distance = serializers.DecimalField(max_digits=10, decimal_places=2)
     service_type = serializers.CharField()
+    job_type = serializers.CharField(required=False)
+    pricing_model_recommendation = serializers.CharField(required=False)
     breakdown = serializers.DictField(help_text="Price breakdown details")
     estimated_days = serializers.CharField(help_text="Estimated delivery time")
 

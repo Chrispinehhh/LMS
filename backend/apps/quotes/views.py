@@ -70,8 +70,32 @@ def calculate_quote(request):
         weight = Decimal(str(data['weight']))
         weight_cost = weight * config.weight_factor
     
+    # Additional calculations based on job_type
+    job_type = data.get('job_type', 'COMMERCIAL')
+    additional_cost = Decimal('0.00')
+    pricing_model_recommendation = 'FLAT_RATE'
+    
+    if job_type == 'RESIDENTIAL':
+        # Residential pricing recommendations
+        room_count = data.get('room_count', 0)
+        if room_count:
+            # Add $50 per room for crew and handling
+            additional_cost += Decimal(str(room_count * 50))
+        pricing_model_recommendation = 'HOURLY'
+        
+    elif job_type == 'COMMERCIAL':
+        # Commercial pricing recommendations
+        pallet_count = data.get('pallet_count', 0)
+        if pallet_count:
+            # Add $75 per pallet
+            additional_cost += Decimal(str(pallet_count * 75))
+        
+        # If weight is high, recommend CWT pricing
+        if data.get('weight') and Decimal(str(data['weight'])) > 1000:
+            pricing_model_recommendation = 'CWT'
+    
     # Calculate total
-    total = service_cost + weight_cost
+    total = service_cost + weight_cost + additional_cost
     
     # Apply minimum charge
     total = max(total, config.minimum_charge)
@@ -88,13 +112,17 @@ def calculate_quote(request):
         'service_cost': str(service_cost.quantize(Decimal('0.01'))),
         'weight': str(data.get('weight') or '0'),
         'weight_cost': str(weight_cost.quantize(Decimal('0.01'))),
+        'job_type_cost': str(additional_cost.quantize(Decimal('0.01'))),
         'minimum_charge': str(config.minimum_charge),
+        'pricing_model_recommendation': pricing_model_recommendation,
     }
     
     response_data = {
         'estimated_price': total,
         'distance': distance,
         'service_type': service_type,
+        'job_type': job_type,
+        'pricing_model_recommendation': pricing_model_recommendation,
         'breakdown': breakdown,
         'estimated_days': estimate_delivery_days(distance),
     }

@@ -41,7 +41,31 @@ export interface Job {
   id: string;
   job_number?: number;
   status: string;
+
+  // Classification
+  job_type?: 'RESIDENTIAL' | 'COMMERCIAL';
   service_type: string;
+
+  // Residential metrics
+  room_count?: number;
+  volume_cf?: number;
+  estimated_items?: Record<string, number>;
+  crew_size?: number;
+
+  // Commercial metrics
+  pallet_count?: number;
+  weight_lbs?: number;
+  is_hazardous?: boolean;
+  bol_number?: string;
+
+  // Pricing
+  pricing_model?: 'HOURLY' | 'FLAT_RATE' | 'CWT';
+  hourly_rate?: number;
+  travel_fee?: number;
+  cwt_rate?: number;
+  flat_rate?: number;
+
+  // Core fields
   cargo_description: string;
   pickup_address: string;
   pickup_city: string;
