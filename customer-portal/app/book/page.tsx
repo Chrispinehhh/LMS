@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { bookingSchema, BookingFormData } from '@/lib/validators';
 
@@ -34,7 +34,6 @@ export default function EnhancedBookingPage() {
   const [direction, setDirection] = useState(0);
   const { backendUser } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const methods = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
@@ -64,19 +63,8 @@ export default function EnhancedBookingPage() {
     } as any,
   });
 
-  const { trigger, getValues, watch, setValue } = methods;
+  const { trigger, getValues, watch } = methods;
   const jobType = watch('job_type');
-
-  // Pre-fill form from URL params (from QuickQuote)
-  useEffect(() => {
-    const origin = searchParams.get('origin');
-    const destination = searchParams.get('destination');
-    const weight = searchParams.get('weight');
-
-    if (origin) setValue('pickup_city', origin);
-    if (destination) setValue('delivery_city', destination);
-    if (weight) setValue('weight_lbs', parseFloat(weight));
-  }, [searchParams, setValue]);
 
   const nextStep = async () => {
     const fieldsToValidate = getStepFields(currentStep);
