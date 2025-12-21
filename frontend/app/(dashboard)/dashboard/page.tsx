@@ -4,116 +4,161 @@
 import { useApi } from "@/hooks/useApi";
 import { DashboardSummary } from "@/types";
 import { StatCard } from "@/components/shared/StatCard";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { JobsChart } from "@/components/shared/JobsChart";
-import { RecentJobs } from "@/components/shared/RecentJobs";
-import { Users, ShoppingCart, Truck, ClipboardList, Clock } from "lucide-react";
+import {
+  Users,
+  ShoppingCart,
+  Truck,
+  ClipboardList,
+  Plus,
+  PackagePlus,
+  UserPlus,
+  Search
+} from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
   const { data: summary, error, isLoading } = useApi<DashboardSummary>('/reports/summary/');
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   if (error) return (
-    <div className="p-6 text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
-      Failed to load dashboard data. Please try again later.
+    <div className="p-6 text-destructive bg-destructive/10 border border-destructive/20 rounded-xl">
+      Failed to load dashboard data. Please reload the page.
     </div>
   );
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-8 max-w-7xl mx-auto"
+    >
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
             Dashboard Overview
           </h1>
-          <p className="text-blue-600 dark:text-blue-300 mt-2">
-            Welcome back! Here&apos;s what&apos;s happening with S&amp;S Logistics today.
+          <p className="text-muted-foreground mt-2">
+            Welcome back! Here's your daily logistics snapshot.
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-2 bg-indigo-100 dark:bg-indigo-900/30 px-4 py-2 rounded-lg">
-          <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </span>
+
+        <div className="flex items-center gap-3">
+          <Link href="/jobs/create">
+            <button className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95 text-sm font-medium">
+              <Plus className="w-4 h-4" />
+              New Job
+            </button>
+          </Link>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {isLoading || !summary ? (
+        {isLoading ? (
           [...Array(4)].map((_, i) => (
-            <div 
-              key={i} 
-              className="bg-white p-6 rounded-lg shadow animate-pulse h-[116px]"
-            ></div>
+            <div key={i} className="bg-card h-32 rounded-2xl animate-pulse" />
           ))
-        ) : (
+        ) : summary ? (
           <>
-            <StatCard 
-              title="Total Revenue (30d)" 
-              value={`$${summary.recent_revenue_30d.toLocaleString()}`} 
+            <StatCard
+              title="Total Revenue"
+              value={`$${summary.recent_revenue_30d.toLocaleString()}`}
               icon={ShoppingCart}
-              description="from last month"
+              description="Last 30 days"
+              trend="up"
             />
-            <StatCard 
-              title="Shipments In Transit" 
-              value={summary.shipments_in_transit} 
+            <StatCard
+              title="Active Shipments"
+              value={summary.shipments_in_transit}
               icon={Truck}
-              description="active shipments"
+              description="In transit"
+              trend="neutral"
             />
-            <StatCard 
-              title="Total Customers" 
-              value={summary.total_customers} 
+            <StatCard
+              title="Total Customers"
+              value={summary.total_customers}
               icon={Users}
-              description="registered clients"
+              description="Active accounts"
+              trend="up"
             />
-            <StatCard 
-              title="Active Jobs" 
-              value={summary.total_jobs} 
+            <StatCard
+              title="Jobs this Week"
+              value={summary.total_jobs}
               icon={ClipboardList}
-              description="this week"
+              description="Scheduled & Active"
+              trend="up"
             />
           </>
-        )}
+        ) : null}
       </div>
 
-      {/* Charts and Recent Jobs */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4 text-cyan-700 dark:text-cyan-400">Shipment Analytics (Last 7 Days)</h2>
-          <JobsChart />
-        </div>
-        <div className="lg:col-span-1">
-          <RecentJobs />
-        </div>
-      </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-      {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 backdrop-blur-sm rounded-xl p-6 border border-emerald-200 dark:border-emerald-700">
-        <h3 className="text-lg font-semibold mb-4 text-emerald-700 dark:text-emerald-400">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:shadow-md hover:scale-105">
-            <Truck className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">New Shipment</span>
-          </button>
-          <button className="bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:shadow-md hover:scale-105">
-            <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Add Client</span>
-          </button>
-          <button className="bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:shadow-md hover:scale-105">
-            <ClipboardList className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Create Job</span>
-          </button>
-          <button className="bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:shadow-md hover:scale-105">
-            <Truck className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Track Package</span>
-          </button>
-        </div>
+        {/* Left Column: Charts */}
+        <motion.div variants={item} className="lg:col-span-2 space-y-8">
+          {/* Analytics Chart */}
+          <div className="glass-card p-6 rounded-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold">Shipment Analytics</h2>
+              <select className="bg-transparent text-sm border-none focus:ring-0 text-muted-foreground cursor-pointer">
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+              </select>
+            </div>
+            <JobsChart />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="glass-card p-6 rounded-2xl">
+            <h2 className="text-lg font-bold mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: PackagePlus, label: "New Job", href: "/jobs/create", color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
+                { icon: UserPlus, label: "Add Client", href: "/users/create", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
+                { icon: Truck, label: "Assign Driver", href: "/fleet/drivers", color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
+                { icon: Search, label: "Track Cargo", href: "/jobs", color: "text-purple-500 bg-purple-50 dark:bg-purple-900/20" },
+              ].map((action, i) => (
+                <Link key={i} href={action.href}>
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    className="p-4 rounded-xl border border-border bg-card/50 hover:bg-card hover:shadow-lg transition-all cursor-pointer group"
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${action.color} group-hover:scale-110 transition-transform`}>
+                      <action.icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">{action.label}</span>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Right Column: Recent Activity */}
+        <motion.div variants={item} className="lg:col-span-1 h-full min-h-[500px]">
+          <RecentActivity />
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

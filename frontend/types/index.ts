@@ -36,8 +36,30 @@ export interface Driver {
 export interface Job {
   id: string;
   job_number?: number;
-  customer: User; // Use User interface instead of BackendUser
-  service_type: string;
+  customer: User;
+
+  // New Fields
+  job_type: 'RESIDENTIAL' | 'COMMERCIAL';
+  service_type?: string; // Legacy
+
+  // Metrics
+  room_count?: number;
+  volume_cf?: number;
+  estimated_items?: Record<string, number>; // New
+  crew_size?: number; // New
+
+  pallet_count?: number;
+  weight_lbs?: number;
+  is_hazardous?: boolean; // New
+  bol_number?: string; // New
+
+  // Pricing
+  pricing_model: 'HOURLY' | 'FLAT_RATE' | 'CWT';
+  hourly_rate?: number;
+  travel_fee?: number;
+  cwt_rate?: number;
+  flat_rate?: number;
+
   status: 'PENDING' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
   cargo_description: string;
   pickup_address: string;
@@ -49,10 +71,11 @@ export interface Job {
   delivery_contact_person: string;
   delivery_contact_phone: string;
   requested_pickup_date: string; // ISO 8601 date string
+  estimated_delivery_date?: string; // ISO 8601 date string
   created_at: string;
   updated_at: string;
-  customer_name?: string;  // Added for serialized data
-  customer_email?: string; // Added for serialized data
+  customer_name?: string;
+  customer_email?: string;
   proof_of_delivery_image?: string | null;
   assigned_driver?: string | null;
 }

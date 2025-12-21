@@ -9,23 +9,58 @@ class Job(BaseModel):
     Represents a transportation job requested by a customer.
     The status of the job is now derived from its related Shipment.
     """
-    class ServiceType(models.TextChoices):
-        RESIDENTIAL_MOVING = 'RESIDENTIAL_MOVING', 'Residential Moving'
-        OFFICE_RELOCATION = 'OFFICE_RELOCATION', 'Office Relocation'
-        PALLET_DELIVERY = 'PALLET_DELIVERY', 'Pallet Delivery'
-        SMALL_DELIVERIES = 'SMALL_DELIVERIES', 'Small Deliveries'
+    class JobType(models.TextChoices):
+        RESIDENTIAL = 'RESIDENTIAL', 'Residential (Movers)'
+        COMMERCIAL = 'COMMERCIAL', 'Commercial (Freight)'
+
+    class PricingModel(models.TextChoices):
+        HOURLY = 'HOURLY', 'Hourly Rate + Travel Fee'
+        FLAT_RATE = 'FLAT_RATE', 'Flat Lane Rate'
+        CWT = 'CWT', 'CWT (Per 100 lbs)'
 
     # Human-readable job number (auto-incrementing)
     job_number = models.PositiveIntegerField(unique=True, editable=False, null=True, blank=True)
 
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='jobs')
     
-    service_type = models.CharField(
-        max_length=50, 
-        choices=ServiceType.choices,
-        default=ServiceType.SMALL_DELIVERIES
+    # Core Classification
+    job_type = models.CharField(
+        max_length=20,
+        choices=JobType.choices,
+        default=JobType.COMMERCIAL
     )
     
+    # Keeping service_type for backward compatibility but making it optional or mapped
+    service_type = models.CharField(
+        max_length=50, 
+        blank=True,
+        null=True,
+        help_text="Legacy field, use job_type for new logic"
+    )
+    
+    # Residential Metrics
+    room_count = models.PositiveIntegerField(null=True, blank=True, help_text="For Residential: Number of rooms")
+    volume_cf = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="For Residential: Volume in cubic feet")
+    estimated_items = models.JSONField(default=dict, blank=True, help_text="For Residential: Inventory list (e.g. {'sofa': 2})")
+    crew_size = models.PositiveSmallIntegerField(null=True, blank=True, help_text="For Residential: Number of movers required")
+    
+    # Commercial Metrics
+    pallet_count = models.PositiveIntegerField(null=True, blank=True, help_text="For Commercial: Number of pallets")
+    weight_lbs = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="For Commercial: Weight in lbs")
+    is_hazardous = models.BooleanField(default=False, help_text="For Commercial: Hazardous material flag")
+    bol_number = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="For Commercial: Bill of Lading Number")
+    
+    # Pricing
+    pricing_model = models.CharField(
+        max_length=20,
+        choices=PricingModel.choices,
+        default=PricingModel.FLAT_RATE
+    )
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="For Hourly pricing")
+    travel_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="For Hourly pricing")
+    cwt_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="For CWT pricing")
+    flat_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="For Flat Rate pricing")
+
     cargo_description = models.TextField()
     
     # Pickup Information

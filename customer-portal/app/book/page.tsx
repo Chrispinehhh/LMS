@@ -1,4 +1,3 @@
-// customer-portal/app/book/page.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -9,30 +8,31 @@ import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-// 💡 REQUIRED IMPORT FOR THE ERROR FIX
 import { AxiosError } from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, ArrowRight, Truck, MapPin, CheckCircle, Package, Building2, Home, Calendar } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Truck, MapPin, CheckCircle, Package, Building2, Home, Calendar, CreditCard, User, Phone } from 'lucide-react';
 import AuthModal from '@/components/Auth/AuthModal';
+import { PremiumCard } from '@/components/shared/PremiumCard';
 
 const bookingSchema = z.object({
   service_type: z.enum(['RESIDENTIAL_MOVING', 'OFFICE_RELOCATION', 'PALLET_DELIVERY', 'SMALL_DELIVERIES']),
-  cargo_description: z.string().min(10, "Please provide a more detailed description."),
+  cargo_description: z.string().min(10, "Please provide a more detailed description (at least 10 chars)."),
 
   // Pickup fields
   pickup_address: z.string().min(5, "Pickup address is required."),
-  pickup_contact_person: z.string().min(2, { message: "Contact person's name is required." }),
-  pickup_contact_phone: z.string().min(10, { message: "A valid phone number is required." }),
+  pickup_contact_person: z.string().min(2, { message: "Contact name required." }),
+  pickup_contact_phone: z.string().min(10, { message: "Valid phone number required." }),
 
   // Delivery fields
   delivery_address: z.string().min(5, "Delivery address is required."),
-  delivery_contact_person: z.string().min(2, { message: "Contact person's name is required." }),
-  delivery_contact_phone: z.string().min(10, { message: "A valid phone number is required." }),
+  delivery_contact_person: z.string().min(2, { message: "Contact name required." }),
+  delivery_contact_phone: z.string().min(10, { message: "Valid phone number required." }),
 
   requested_pickup_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
     message: "Please select a valid date and time.",
@@ -48,16 +48,17 @@ const steps = [
 ];
 
 const serviceOptions = {
-  RESIDENTIAL_MOVING: { name: "Residential Moving", icon: Home },
-  OFFICE_RELOCATION: { name: "Office Relocation", icon: Building2 },
-  PALLET_DELIVERY: { name: "Pallet Delivery", icon: Package },
-  SMALL_DELIVERIES: { name: "Small Deliveries", icon: Truck },
+  RESIDENTIAL_MOVING: { name: "Residential Moving", description: "Full home moving service with crew", icon: Home },
+  OFFICE_RELOCATION: { name: "Office Relocation", description: "Secure transport for business assets", icon: Building2 },
+  PALLET_DELIVERY: { name: "Pallet Delivery", description: "Warehouse to warehouse freight", icon: Package },
+  SMALL_DELIVERIES: { name: "Small Deliveries", description: "Quick courier for small items", icon: Truck },
 };
 
 export default function BookingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [direction, setDirection] = useState(0); // 1 for next, -1 for prev
 
   const methods = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
@@ -76,25 +77,11 @@ export default function BookingPage() {
   });
   const { trigger, getValues } = methods;
 
-  // Debugging and safety measures
-  useEffect(() => {
-    console.log('🚀 Booking Page mounted - initial modal state:', isAuthModalOpen);
-  }, [isAuthModalOpen]);
-
-  useEffect(() => {
-    console.log('🔍 Booking Page - AuthModal state changed:', isAuthModalOpen);
-    console.log('🔍 Booking Page - Current step:', currentStep);
-  }, [isAuthModalOpen, currentStep]);
-
-  // Force close modal on mount as safety measure
+  // Safe modal handling
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (isAuthModalOpen) {
-        console.log('🛠️ Safety: Forcing AuthModal closed on booking page mount');
-        setIsAuthModalOpen(false);
-      }
+      if (isAuthModalOpen) setIsAuthModalOpen(false);
     }, 100);
-
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -115,102 +102,137 @@ export default function BookingPage() {
     }
 
     if (currentStep < steps.length) {
+      setDirection(1);
       setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
+      setDirection(-1);
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const handleAuthModalClose = () => {
-    console.log('Closing AuthModal from booking page');
-    setIsAuthModalOpen(false);
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 50 : -50,
+      opacity: 0
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 50 : -50,
+      opacity: 0
+    })
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
-      <div className="fixed inset-0 bg-gradient-to-br from-background to-muted/30 -z-10"></div>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-12 px-4 transition-colors duration-300">
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+      </div>
 
-      {/* Conditional AuthModal rendering */}
       {isAuthModalOpen && (
         <AuthModal
           isOpen={isAuthModalOpen}
-          onClose={handleAuthModalClose}
+          onClose={() => setIsAuthModalOpen(false)}
         />
       )}
 
-      <div className="relative z-10 container mx-auto px-4 h-full flex flex-grow items-center justify-center pt-24 pb-8">
+      <div className="relative z-10 container mx-auto max-w-3xl">
         <FormProvider {...methods}>
-          <div className="w-full max-w-2xl mx-auto bg-card backdrop-blur-sm rounded-2xl border border-border shadow-2xl overflow-hidden my-8 transition-all duration-300">
-            <div className="p-6 border-b border-border bg-muted/20">
-              <div className="flex justify-between items-center">
-                {steps.map((step, index) => {
-                  const StepIcon = step.icon;
-                  const isActive = currentStep === step.id;
-                  const isCompleted = currentStep > step.id;
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">Book a Shipment</h1>
+            <p className="text-muted-foreground">Get an instant quote and reliable logistics in minutes.</p>
+          </div>
 
-                  return (
-                    <React.Fragment key={step.id}>
-                      <div className="flex flex-col items-center">
-                        <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${isCompleted ? 'bg-green-500 border-green-500 text-white' : isActive ? 'bg-primary border-primary text-primary-foreground' : 'bg-muted border-input text-muted-foreground'}`}>
-                          {isCompleted ? <CheckCircle className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
-                        </div>
-                        <span className={`mt-2 text-xs font-medium ${isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>{step.name}</span>
-                      </div>
-                      {index < steps.length - 1 && <div className="flex-1 h-px bg-border mx-4"></div>}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </div>
+          {/* Stepper */}
+          <div className="flex justify-center mb-10">
+            <div className="flex items-center gap-4">
+              {steps.map((step, index) => {
+                const isActive = currentStep === step.id;
+                const isCompleted = currentStep > step.id;
+                const Icon = step.icon;
 
-            <div className="p-8">
-              <div className="mb-6 text-left">
-                <h2 className="text-2xl font-bold text-foreground">Step {currentStep}: {steps[currentStep - 1].name}</h2>
-              </div>
-
-              {currentStep === 1 && <Step1ServiceDetails />}
-              {currentStep === 2 && <Step2Location />}
-              {currentStep === 3 && (
-                <Step3Confirm
-                  price={estimatedPrice}
-                  onLoginRequired={() => {
-                    console.log('Login required triggered from Step3');
-                    setIsAuthModalOpen(true);
-                  }}
-                />
-              )}
-
-              <div className="mt-8 pt-6 border-t border-border">
-                <div className="flex justify-between items-center gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                    className="border-input hover:bg-muted text-foreground disabled:opacity-50"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-                  </Button>
-                  {currentStep < steps.length && (
-                    <Button
-                      onClick={nextStep}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold group"
-                    >
-                      Next Step <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+                return (
+                  <div key={step.id} className="flex items-center">
+                    <div className={`
+                                     flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300
+                                     ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' :
+                        isActive ? 'bg-primary border-primary text-white shadow-lg shadow-primary/30 scale-110' :
+                          'bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-700 text-gray-400'}
+                                 `}>
+                      {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div className={`w-12 h-0.5 mx-2 ${isCompleted ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-800'}`}></div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
+
+          <PremiumCard className="p-0 overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-white/20 shadow-2xl">
+            <div className="p-8">
+              <AnimatePresence mode="wait" custom={direction}>
+                <motion.div
+                  key={currentStep}
+                  custom={direction}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                >
+                  {currentStep === 1 && <Step1ServiceDetails />}
+                  {currentStep === 2 && <Step2Location />}
+                  {currentStep === 3 && (
+                    <Step3Confirm
+                      price={estimatedPrice}
+                      onLoginRequired={() => setIsAuthModalOpen(true)}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="bg-gray-50/50 dark:bg-slate-950/50 p-6 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+              <Button
+                variant="ghost"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+              </Button>
+
+              {currentStep < steps.length && (
+                <Button
+                  onClick={nextStep}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
+                >
+                  Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </PremiumCard>
         </FormProvider>
       </div>
     </div>
   );
 }
+
+// ... Subcomponents ...
 
 const ThemeFormField = ({ name, label, children }: { name: keyof BookingFormData, label: string, children: (field: ControllerRenderProps<BookingFormData, keyof BookingFormData>) => React.ReactNode }) => {
   const { control } = useFormContext<BookingFormData>();
@@ -219,10 +241,16 @@ const ThemeFormField = ({ name, label, children }: { name: keyof BookingFormData
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className="mb-4">
-          <FormLabel className="text-foreground font-medium text-sm">{label}</FormLabel>
-          <FormControl>{children(field)}</FormControl>
-          <FormMessage className="text-destructive text-sm mt-1" />
+        <FormItem className="mb-5">
+          <FormLabel className="text-foreground font-medium text-sm flex items-center gap-2">
+            {label}
+          </FormLabel>
+          <FormControl>
+            <div className="relative">
+              {children(field)}
+            </div>
+          </FormControl>
+          <FormMessage className="text-red-500 text-xs mt-1 font-medium" />
         </FormItem>
       )}
     />
@@ -230,34 +258,57 @@ const ThemeFormField = ({ name, label, children }: { name: keyof BookingFormData
 }
 
 function Step1ServiceDetails() {
+  const { setValue, watch } = useFormContext<BookingFormData>();
+  const selectedService = watch('service_type');
+
   return (
-    <div className="space-y-4">
-      <ThemeFormField name="service_type" label="Which service do you need?">
-        {(field) => (
-          <Select onValueChange={field.onChange} defaultValue={field.value}>
-            <SelectTrigger className="bg-background border-input text-foreground h-12 text-base">
-              <SelectValue placeholder="Select a service type" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border text-popover-foreground">
-              {Object.entries(serviceOptions).map(([key, { name, icon: Icon }]) => (
-                <SelectItem key={key} value={key} className="focus:bg-accent focus:text-accent-foreground">
-                  <div className="flex items-center gap-3">
-                    <Icon className="h-4 w-4" />
-                    {name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </ThemeFormField>
-      <ThemeFormField name="cargo_description" label="Briefly describe the items">
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Select a Service</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Object.entries(serviceOptions).map(([key, { name, description, icon: Icon }]) => (
+            <div
+              key={key}
+              onClick={() => setValue('service_type', key as any, { shouldValidate: true })}
+              className={`
+                        cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 relative overflow-hidden group
+                        ${selectedService === key
+                  ? 'border-primary bg-primary/5 shadow-md'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-primary/50 hover:shadow-sm bg-white dark:bg-slate-950'}
+                    `}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${selectedService === key ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 group-hover:text-primary transition-colors'}`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className={`font-bold ${selectedService === key ? 'text-primary' : 'text-gray-900 dark:text-white'}`}>{name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{description}</p>
+                </div>
+              </div>
+              {selectedService === key && (
+                <div className="absolute top-2 right-2 text-primary">
+                  <CheckCircle className="w-5 h-5 fill-primary/20" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Hidden select for hook form registration if needed, or just let custom onClick handle it */}
+        <div className="h-0 overflow-hidden">
+          <ThemeFormField name="service_type" label="">
+            {(field) => <Input {...field} />}
+          </ThemeFormField>
+        </div>
+      </div>
+
+      <ThemeFormField name="cargo_description" label="Cargo Description">
         {(field) => (
           <Textarea
             rows={4}
-            placeholder="e.g., 10 moving boxes, 1 large sofa, electronics..."
+            placeholder="Describe your items in detail (e.g. '1 large oak dining table, 6 chairs, 10 medium boxes')"
             {...field}
-            className="bg-background border-input text-foreground placeholder:text-muted-foreground resize-none"
+            className="bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-800 focus:border-primary focus:ring-primary/20 resize-none"
           />
         )}
       </ThemeFormField>
@@ -267,53 +318,64 @@ function Step1ServiceDetails() {
 
 function Step2Location() {
   return (
-    <div className="space-y-6">
-      <div className="bg-card/50 rounded-xl border border-border p-4">
-        <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-blue-500" />
-          Pickup Details
-        </h3>
-        <ThemeFormField name="pickup_address" label="Pickup Address">
-          {(field) => <Input placeholder="123 Main St, Anytown, USA" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
-        </ThemeFormField>
+    <div className="space-y-8">
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Pickup Column */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-blue-600" />
+            </div>
+            <h3 className="font-bold text-gray-900 dark:text-white">Pickup Details</h3>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <ThemeFormField name="pickup_contact_person" label="Contact Person">
-            {(field) => <Input placeholder="John Doe" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
+          <ThemeFormField name="pickup_address" label="Address">
+            {(field) => <Input placeholder="123 Pickup St, City, Country" {...field} className="h-11 bg-white dark:bg-slate-950" />}
           </ThemeFormField>
-          <ThemeFormField name="pickup_contact_phone" label="Contact Phone">
-            {(field) => <Input placeholder="(123) 456-7890" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
+
+          <div className="grid grid-cols-2 gap-3">
+            <ThemeFormField name="pickup_contact_person" label="Contact Name">
+              {(field) => <Input placeholder="John Doe" {...field} className="h-11 bg-white dark:bg-slate-950" />}
+            </ThemeFormField>
+            <ThemeFormField name="pickup_contact_phone" label="Phone">
+              {(field) => <Input placeholder="(555) 123-4567" {...field} className="h-11 bg-white dark:bg-slate-950" />}
+            </ThemeFormField>
+          </div>
+        </div>
+
+        {/* Delivery Column */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-emerald-600" />
+            </div>
+            <h3 className="font-bold text-gray-900 dark:text-white">Delivery Details</h3>
+          </div>
+
+          <ThemeFormField name="delivery_address" label="Address">
+            {(field) => <Input placeholder="456 Dropoff Ave, City, Country" {...field} className="h-11 bg-white dark:bg-slate-950" />}
           </ThemeFormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <ThemeFormField name="delivery_contact_person" label="Contact Name">
+              {(field) => <Input placeholder="Jane Smith" {...field} className="h-11 bg-white dark:bg-slate-950" />}
+            </ThemeFormField>
+            <ThemeFormField name="delivery_contact_phone" label="Phone">
+              {(field) => <Input placeholder="(555) 987-6543" {...field} className="h-11 bg-white dark:bg-slate-950" />}
+            </ThemeFormField>
+          </div>
         </div>
       </div>
 
-      <div className="bg-card/50 rounded-xl border border-border p-4">
-        <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-green-500" />
-          Delivery Details
+      <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-amber-500" /> Desired Pickup Date
         </h3>
-        <ThemeFormField name="delivery_address" label="Delivery Address">
-          {(field) => <Input placeholder="456 Oak Ave, Othertown, USA" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
-        </ThemeFormField>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <ThemeFormField name="delivery_contact_person" label="Contact Person">
-            {(field) => <Input placeholder="Jane Smith" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
-          </ThemeFormField>
-          <ThemeFormField name="delivery_contact_phone" label="Contact Phone">
-            {(field) => <Input placeholder="(987) 654-3210" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
+        <div className="max-w-xs">
+          <ThemeFormField name="requested_pickup_date" label="">
+            {(field) => <Input type="datetime-local" {...field} className="h-12 bg-white dark:bg-slate-950 text-lg" />}
           </ThemeFormField>
         </div>
-      </div>
-
-      <div className="bg-card/50 rounded-xl border border-border p-4">
-        <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-amber-500" />
-          Schedule
-        </h3>
-        <ThemeFormField name="requested_pickup_date" label="Requested Pickup Date & Time">
-          {(field) => <Input type="datetime-local" {...field} className="bg-background border-input text-foreground placeholder:text-muted-foreground h-12" />}
-        </ThemeFormField>
       </div>
     </div>
   );
@@ -326,17 +388,8 @@ function Step3Confirm({ price, onLoginRequired }: { price: number | null; onLogi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const values = getValues();
 
-  // Debugging for Step3
-  useEffect(() => {
-    console.log('🔍 Step3Confirm - backendUser:', backendUser);
-    console.log('🔍 Step3Confirm - isSubmitting:', isSubmitting);
-  }, [backendUser, isSubmitting]);
-
   const handleConfirmBooking = async () => {
-    console.log('Confirm booking clicked, backendUser:', backendUser);
-
     if (!backendUser) {
-      console.log('No user logged in, triggering login modal');
       toast('Please log in to complete your booking.', { icon: '🔒' });
       onLoginRequired();
       return;
@@ -344,13 +397,9 @@ function Step3Confirm({ price, onLoginRequired }: { price: number | null; onLogi
 
     setIsSubmitting(true);
     try {
-      // Extract cities from addresses (simple implementation)
       const extractCity = (address: string): string => {
         const parts = address.split(',');
-        if (parts.length > 1) {
-          return parts[parts.length - 2]?.trim() || "City";
-        }
-        return "City";
+        return parts.length > 1 ? parts[parts.length - 2]?.trim() || "City" : "City";
       };
 
       const jobPayload = {
@@ -360,47 +409,13 @@ function Step3Confirm({ price, onLoginRequired }: { price: number | null; onLogi
         delivery_city: extractCity(values.delivery_address),
       };
 
-      console.log('🔍 Full booking payload:', jobPayload);
-
-      const response = await apiClient.post('/book/', jobPayload);
-      console.log('✅ Booking successful, response:', response.data);
-
-      toast.success("Booking successful! A manager will be in touch shortly.");
-      router.push('/');
-    } catch (error) { // 💡 The 'any' is removed, defaulting to 'unknown'
-      console.error('❌ Full booking error:', error);
-
-      // Check if the error is an Axios error for structured response handling
-      const axiosError = error as AxiosError;
-
-      if (axiosError.response) {
-        console.error('❌ Error data:', axiosError.response.data);
-        console.error('❌ Error status:', axiosError.response.status);
-
-        const errorData = axiosError.response.data;
-        let errorMessage = "Booking failed. Please try again.";
-
-        // Enhanced type-safe error message extraction
-        if (typeof errorData === 'string') {
-          errorMessage = errorData;
-        } else if (typeof errorData === 'object' && errorData !== null) {
-          if ('detail' in errorData && typeof errorData.detail === 'string') {
-            errorMessage = errorData.detail;
-          } else if ('error' in errorData && typeof errorData.error === 'string') {
-            errorMessage = errorData.error;
-          } else if ('non_field_errors' in errorData && Array.isArray(errorData.non_field_errors)) {
-            errorMessage = errorData.non_field_errors.join(', ');
-          }
-        }
-
-        toast.error(errorMessage);
-      } else if (error instanceof Error) {
-        // Handle standard JavaScript/Network errors
-        toast.error(`Request failed: ${error.message}`);
-      } else {
-        // Handle unknown error types
-        toast.error("An unknown error occurred during booking. Please try again.");
-      }
+      await apiClient.post('/book/', jobPayload);
+      toast.success("Booking successful! Redirecting...");
+      router.push('/dashboard/orders');
+    } catch (error: any) {
+      // Simplified error handling
+      toast.error("Booking failed. Please try again.");
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -408,31 +423,49 @@ function Step3Confirm({ price, onLoginRequired }: { price: number | null; onLogi
 
   return (
     <div className="space-y-6">
-      <div className="p-4 border border-border rounded-xl space-y-2 bg-muted/20 text-foreground">
-        <h3 className="text-lg font-bold text-center mb-4">Review Your Details</h3>
-        <p><strong>Service:</strong> <span className="font-medium">{serviceOptions[values.service_type]?.name}</span></p>
-        <p><strong>Pickup:</strong> <span className="font-medium">{values.pickup_address}</span></p>
-        <p><strong>Pickup Contact:</strong> <span className="font-medium">{values.pickup_contact_person} - {values.pickup_contact_phone}</span></p>
-        <p><strong>Delivery:</strong> <span className="font-medium">{values.delivery_address}</span></p>
-        <p><strong>Delivery Contact:</strong> <span className="font-medium">{values.delivery_contact_person} - {values.delivery_contact_phone}</span></p>
-        <p><strong>Date:</strong> <span className="font-medium">{values.requested_pickup_date ? new Date(values.requested_pickup_date).toLocaleString() : ''}</span></p>
+      <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 bg-gray-50/50 dark:bg-slate-900/50">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+          <span className="font-bold text-lg text-gray-900 dark:text-white">Booking Summary</span>
+          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase">Draft</span>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-y-6 gap-x-12 mb-6">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Service</p>
+            <p className="font-semibold">{serviceOptions[values.service_type]?.name}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Date</p>
+            <p className="font-semibold">{values.requested_pickup_date ? new Date(values.requested_pickup_date).toLocaleString() : 'Not scheduled'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">From</p>
+            <p className="font-semibold flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500" /> {values.pickup_address}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">To</p>
+            <p className="font-semibold flex items-center gap-1"><MapPin className="w-3 h-3 text-emerald-500" /> {values.delivery_address}</p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-800">
+          <span className="text-muted-foreground">Estimated Total</span>
+          <span className="text-3xl font-black text-gray-900 dark:text-white">${price?.toFixed(2)}</span>
+        </div>
       </div>
-      <div className="text-center py-4">
-        <p className="text-muted-foreground">Estimated Price</p>
-        <p className="text-4xl font-black text-foreground">${price ? price.toFixed(2) : '--.--'}</p>
-      </div>
+
       <Button
         onClick={handleConfirmBooking}
         disabled={isSubmitting}
-        className="w-full text-lg py-6 bg-primary hover:bg-primary/90 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground"
+        size="lg"
+        className="w-full text-lg h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xl shadow-emerald-500/20"
       >
-        {isSubmitting ? "Confirming..." : (backendUser ? "Confirm & Book Now" : "Login & Book Now")}
+        {isSubmitting ? (
+          <span className="flex items-center gap-2"><div className="animate-spin rounded-full h-4 w-4 border-2 border-white/50"></div> Processing...</span>
+        ) : (
+          backendUser ? "Confirm Booking" : "Login to Book"
+        )}
       </Button>
-      {!backendUser && (
-        <p className="text-center text-sm text-muted-foreground mt-2">
-          You will be prompted to log in to continue.
-        </p>
-      )}
     </div>
   );
 }

@@ -12,14 +12,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Truck, Calendar, MapPin, Phone, Package, CheckCircle, XCircle, Edit, LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Truck,
+  Calendar,
+  MapPin,
+  Phone,
+  Package,
+  CheckCircle,
+  XCircle,
+  Edit,
+  LucideIcon,
+  FileText,
+  Clock,
+  LayoutDashboard,
+  Box,
+  Map as MapIcon,
+  FileCheck,
+  ChevronRight,
+  Printer
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
 
-// Define response types for API calls
+// Types
 type ShipmentsResponse = Shipment[] | PaginatedResponse<Shipment>;
 type VehiclesResponse = Vehicle[] | PaginatedResponse<Vehicle>;
 type DriversResponse = Driver[] | PaginatedResponse<Driver>;
 
-// Helper function to extract data from different response formats
 function extractData<T>(data: T[] | PaginatedResponse<T> | null): T[] {
   if (!data) return [];
   if (Array.isArray(data)) return data;
@@ -27,68 +48,60 @@ function extractData<T>(data: T[] | PaginatedResponse<T> | null): T[] {
   return [];
 }
 
-// Reusable sub-component for info cards
-const InfoCard = ({ title, children, icon: Icon }: {
+// Sub-components
+const InfoCard = ({ title, children, icon: Icon, className = "" }: {
   title: string;
   children: React.ReactNode;
   icon?: LucideIcon;
+  className?: string;
 }) => (
-  <div className="bg-white dark:bg-gray-800 p-6 shadow rounded-lg border border-gray-200 dark:border-gray-700">
-    <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200 dark:border-gray-600">
-      {Icon && <Icon className="w-5 h-5 text-emerald-600" />}
-      <h2 className="text-xl font-semibold text-purple-700 dark:text-purple-400">{title}</h2>
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`glass-card p-6 rounded-2xl relative overflow-hidden ${className}`}
+  >
+    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/50">
+      {Icon && (
+        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+          <Icon className="w-5 h-5" />
+        </div>
+      )}
+      <h2 className="text-lg font-bold text-foreground">{title}</h2>
     </div>
     <div className="space-y-4">{children}</div>
-  </div>
+  </motion.div>
 );
 
-// Reusable sub-component for rows within info cards
 const InfoRow = ({ label, value, icon: Icon }: {
   label: string;
   value: React.ReactNode;
   icon?: LucideIcon;
 }) => (
-  <div className="flex justify-between items-start text-sm">
-    <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
-      {Icon && <Icon className="w-4 h-4" />}
-      <p>{label}</p>
+  <div className="flex justify-between items-center text-sm py-1">
+    <div className="flex items-center gap-2 text-muted-foreground">
+      {Icon && <Icon className="w-4 h-4 text-primary/70" />}
+      <span>{label}</span>
     </div>
-    <p className="font-medium text-right text-gray-900 dark:text-white max-w-[60%]">{value}</p>
+    <span className="font-medium text-foreground text-right">{value}</span>
   </div>
 );
 
-// Define the status type for TypeScript
-type StatusType = 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED';
-
-// Status badge component with proper TypeScript typing
 const StatusBadge = ({ status }: { status: string }) => {
-  const statusStyles: Record<StatusType, string> = {
-    PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700",
-    ASSIGNED: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700",
-    IN_TRANSIT: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700",
-    DELIVERED: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
-    FAILED: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case 'DELIVERED': return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800";
+      case 'IN_TRANSIT': return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
+      case 'PENDING': return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800";
+      case 'FAILED': return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800";
+      case 'ASSIGNED': return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800";
+      default: return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+    }
   };
-
-  const statusLabels: Record<StatusType, string> = {
-    PENDING: "Pending",
-    ASSIGNED: "Assigned",
-    IN_TRANSIT: "In Transit",
-    DELIVERED: "Delivered",
-    FAILED: "Failed",
-  };
-
-  // Type guard to check if status is valid
-  const isValidStatus = (s: string): s is StatusType => {
-    return s in statusStyles;
-  };
-
-  const badgeStatus = isValidStatus(status) ? status : 'PENDING';
 
   return (
-    <Badge variant="outline" className={`${statusStyles[badgeStatus]} border font-medium`}>
-      {statusLabels[badgeStatus]}
-    </Badge>
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border capitalize ${getStatusColor(status)}`}>
+      {status.replace('_', ' ')}
+    </span>
   );
 };
 
@@ -96,30 +109,24 @@ export default function JobDetailPage() {
   const params = useParams();
   const jobId = params.id as string;
 
-  // Data fetching hooks
+  const [activeTab, setActiveTab] = useState<'overview' | 'cargo' | 'billing'>('overview');
+
   const { data: job, error: jobError, isLoading: jobLoading, mutate: mutateJob } = useApi<Job>(jobId ? `/jobs/${jobId}/` : null);
-  const { data: shipmentsResponse, error: shipmentError, isLoading: shipmentLoading, mutate: mutateShipments } = useApi<ShipmentsResponse>(jobId ? `/transportation/shipments/?job_id=${jobId}` : null);
+  const { data: shipmentsResponse, isLoading: shipmentLoading, mutate: mutateShipments } = useApi<ShipmentsResponse>(jobId ? `/transportation/shipments/?job_id=${jobId}` : null);
   const { data: vehiclesResponse } = useApi<VehiclesResponse>('/transportation/vehicles/?status=AVAILABLE');
   const { data: driversResponse } = useApi<DriversResponse>('/transportation/drivers/');
 
-  // Extract data from responses
   const shipments = extractData(shipmentsResponse);
   const vehicles = extractData(vehiclesResponse);
   const drivers = extractData(driversResponse);
 
-  // State for the assignment form - use "none" instead of empty string
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("none");
   const [selectedDriverId, setSelectedDriverId] = useState<string>("none");
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Derived state
   const currentShipment = shipments && shipments.length > 0 ? shipments[0] : null;
-  const isAssigned = !!(currentShipment && currentShipment.driver && currentShipment.vehicle);
-  const canEditAssignment = currentShipment &&
-    (currentShipment.status === 'PENDING' || currentShipment.status === 'ASSIGNED');
 
-  // Sync form state with fetched data
   useEffect(() => {
     if (currentShipment) {
       setSelectedDriverId(currentShipment.driver?.id || "none");
@@ -128,398 +135,315 @@ export default function JobDetailPage() {
       setSelectedDriverId("none");
       setSelectedVehicleId("none");
     }
-    // Auto-enter edit mode if unassigned
-    setIsEditing(!isAssigned);
-  }, [currentShipment, isAssigned]);
+    // Only auto-edit if strictly allowed and unassigned. 
+    // Logic changed to manual trigger for better UX.
+  }, [currentShipment]);
 
-  // Handler for assigning job
   const handleAssign = async () => {
-    if (!jobId) {
-      toast.error("Job ID not found.");
-      return;
-    }
-
+    if (!jobId) return;
     setIsSubmitting(true);
-
     try {
-      // Convert "none" to null for the backend
       const driverIdPayload = selectedDriverId === "none" ? null : selectedDriverId;
       const vehicleIdPayload = selectedVehicleId === "none" ? null : selectedVehicleId;
+      const payload = {
+        driver_id: driverIdPayload,
+        vehicle_id: vehicleIdPayload,
+        status: (driverIdPayload && vehicleIdPayload) ? 'ASSIGNED' : 'PENDING',
+      };
 
       if (currentShipment) {
-        // Update existing shipment
-        await apiClient.patch(`/transportation/shipments/${currentShipment.id}/`, {
-          driver_id: driverIdPayload,
-          vehicle_id: vehicleIdPayload,
-          status: (driverIdPayload && vehicleIdPayload) ? 'ASSIGNED' : 'PENDING',
-        });
+        await apiClient.patch(`/transportation/shipments/${currentShipment.id}/`, payload);
       } else {
-        // Create new shipment
-        await apiClient.post('/transportation/shipments/', {
-          job_id: jobId,
-          driver_id: driverIdPayload,
-          vehicle_id: vehicleIdPayload,
-          status: (driverIdPayload && vehicleIdPayload) ? 'ASSIGNED' : 'PENDING',
-        });
+        await apiClient.post('/transportation/shipments/', { ...payload, job_id: jobId });
       }
 
       toast.success("Assignment updated successfully!");
       setIsEditing(false);
       mutateJob();
       mutateShipments();
-    } catch (err: unknown) {
-      console.error("Failed to update assignment:", err);
-      let errorMessage = "Failed to update assignment.";
-
-      if (err instanceof AxiosError) {
-        if (err.response?.data?.detail) {
-          errorMessage = err.response.data.detail;
-        } else if (err.response?.data?.error) {
-          errorMessage = err.response.data.error;
-        }
-      }
-
-      toast.error(errorMessage);
+    } catch (err: any) {
+      toast.error("Failed to update assignment.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handler for marking job as delivered
-  const handleMarkDelivered = async () => {
-    if (!currentShipment) return;
-
-    setIsSubmitting(true);
-    try {
-      await apiClient.patch(`/transportation/shipments/${currentShipment.id}/`, {
-        status: 'DELIVERED',
-      });
-      toast.success("Job marked as delivered!");
-      mutateJob();
-      mutateShipments();
-    } catch (err: unknown) {
-      console.error("Failed to mark as delivered:", err);
-      toast.error("Failed to update status.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handler for marking job as failed
-  const handleMarkFailed = async () => {
-    if (!currentShipment) return;
-
-    setIsSubmitting(true);
-    try {
-      await apiClient.patch(`/transportation/shipments/${currentShipment.id}/`, {
-        status: 'FAILED',
-      });
-      toast.success("Job marked as failed!");
-      mutateJob();
-      mutateShipments();
-    } catch (err: unknown) {
-      console.error("Failed to mark as failed:", err);
-      toast.error("Failed to update status.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Loading and error states
-  const isLoading = jobLoading || shipmentLoading;
-  const error = jobError || shipmentError;
-
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="flex justify-center items-center space-x-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-          <span className="text-gray-600 dark:text-gray-400">Loading job details...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 space-y-4">
-        <div className="text-red-600 dark:text-red-400 font-semibold">Failed to load job details.</div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          Error: {error.message}
-        </div>
-        <Link href="/jobs" className="inline-flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 hover:underline">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to All Jobs</span>
-        </Link>
-      </div>
-    );
-  }
-
-  if (!job) {
-    return (
-      <div className="p-6 space-y-4">
-        <div className="text-red-600 dark:text-red-400 font-semibold">Job not found.</div>
-        <Link href="/jobs" className="inline-flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 hover:underline">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to All Jobs</span>
-        </Link>
-      </div>
-    );
-  }
+  if (jobLoading || shipmentLoading) return <div className="p-10 text-center animate-pulse">Loading job details...</div>;
+  if (jobError || !job) return <div className="p-10 text-center text-destructive">Failed to load job.</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link href="/jobs" className="inline-flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 hover:underline mb-2">
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to All Jobs</span>
-          </Link>
-          <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">
-              Job Details
-            </h1>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border/50">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+            <Link href="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <Link href="/jobs" className="hover:text-primary transition-colors">Jobs</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span>Details</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold tracking-tight">Job #{job.job_number || job.id.slice(0, 8)}</h1>
             <StatusBadge status={currentShipment?.status || job.status} />
           </div>
-          <p className="text-blue-600 dark:text-blue-300 mt-2">
-            Job Number: {job.job_number ? `#${job.job_number}` : job.id}
-          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <Button variant="outline" className="gap-2">
+            <Printer className="w-4 h-4" /> Print BOL
+          </Button>
+          <Button onClick={() => setIsEditing(true)} className="gap-2 shadow-lg shadow-primary/20">
+            <Edit className="w-4 h-4" /> {isEditing ? 'Editing...' : 'Edit Job'}
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <InfoCard title="Cargo & Service Details" icon={Package}>
-            <InfoRow label="Service Type" value={job.service_type.replace(/_/g, ' ')} />
-            <InfoRow label="Requested Pickup" value={new Date(job.requested_pickup_date).toLocaleString()} icon={Calendar} />
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Description</p>
-              <p className="font-medium text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                {job.cargo_description}
-              </p>
-            </div>
-          </InfoCard>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InfoCard title="Pickup Details" icon={MapPin}>
-              <InfoRow label="Address" value={`${job.pickup_address}, ${job.pickup_city}`} />
-              <InfoRow label="Contact" value={job.pickup_contact_person} icon={User} />
-              <InfoRow label="Phone" value={job.pickup_contact_phone} icon={Phone} />
-            </InfoCard>
-
-            <InfoCard title="Delivery Details" icon={MapPin}>
-              <InfoRow label="Address" value={`${job.delivery_address}, ${job.delivery_city}`} />
-              <InfoRow label="Contact" value={job.delivery_contact_person} icon={User} />
-              <InfoRow label="Phone" value={job.delivery_contact_phone} icon={Phone} />
-            </InfoCard>
+      {/* Tabs Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Main Content */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Custom Tabs */}
+          <div className="flex gap-1 p-1 bg-secondary/50 rounded-xl w-fit">
+            {[
+              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+              { id: 'cargo', label: 'Cargo Details', icon: Box },
+              { id: 'billing', label: 'Billing', icon: FileText },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                    ${activeTab === tab.id
+                    ? 'bg-background text-primary shadow-sm'
+                    : 'text-muted-foreground hover:bg-background/50 hover:text-foreground'}
+                  `}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          <InfoCard title="Customer Information" icon={User}>
-            <InfoRow label="Name" value={`${job.customer.first_name} ${job.customer.last_name}`} />
-            <InfoRow label="Email" value={job.customer.email} />
-            <InfoRow label="Type" value={job.customer.customer_type?.replace('_', ' ')} />
-          </InfoCard>
+          <AnimatePresence mode="wait">
+            {activeTab === 'overview' && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="space-y-6"
+              >
+                {/* Route & Map Placeholder */}
+                <InfoCard title="Route Information" icon={MapIcon}>
+                  <div className="grid md:grid-cols-2 gap-8 relative">
+                    {/* Timeline Visual */}
+                    <div className="absolute left-1/2 top-4 bottom-4 w-px bg-border/50 hidden md:block" />
+
+                    <div className="space-y-2 relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <h3 className="font-semibold text-blue-600 dark:text-blue-400">Pickup</h3>
+                      </div>
+                      <div className="pl-10 space-y-1">
+                        <p className="font-medium text-lg">{job.pickup_city}</p>
+                        <p className="text-muted-foreground text-sm">{job.pickup_address}</p>
+                        <div className="flex items-center gap-2 pt-2 text-sm">
+                          <User className="w-3 h-3" /> {job.pickup_contact_person}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-3 h-3" /> {job.pickup_contact_phone}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <h3 className="font-semibold text-emerald-600 dark:text-emerald-400">Delivery</h3>
+                      </div>
+                      <div className="pl-10 space-y-1">
+                        <p className="font-medium text-lg">{job.delivery_city}</p>
+                        <p className="text-muted-foreground text-sm">{job.delivery_address}</p>
+                        <div className="flex items-center gap-2 pt-2 text-sm">
+                          <User className="w-3 h-3" /> {job.delivery_contact_person}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-3 h-3" /> {job.delivery_contact_phone}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </InfoCard>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <InfoCard title="Customer" icon={User}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                        {job.customer.first_name?.[0]}
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">{job.customer.first_name} {job.customer.last_name}</p>
+                        <p className="text-sm text-muted-foreground">{job.customer.email}</p>
+                        <p className="text-xs font-medium text-primary mt-1 uppercase tracking-wide">{job.customer.customer_type?.replace('_', ' ')}</p>
+                      </div>
+                    </div>
+                  </InfoCard>
+
+                  <InfoCard title="Schedule" icon={Calendar}>
+                    <InfoRow label="Requested Pickup" value={format(new Date(job.requested_pickup_date), 'PPP p')} icon={Calendar} />
+                    <InfoRow label="Estimated Delivery" value={job.estimated_delivery_date ? format(new Date(job.estimated_delivery_date), 'PPP') : 'TBD'} icon={Clock} />
+                  </InfoCard>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'cargo' && (
+              <motion.div
+                key="cargo"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+              >
+                <InfoCard title="Cargo Specification" icon={Package}>
+                  <div className="grid md:grid-cols-3 gap-6 mb-8 bg-secondary/20 p-4 rounded-xl">
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Service Type</p>
+                      <p className="font-bold text-lg capitalize">{job.service_type?.replace(/_/g, ' ') || job.job_type}</p>
+                    </div>
+                    <div className="text-center border-l border-border/50">
+                      <p className="text-sm text-muted-foreground">Volume/Weight</p>
+                      <p className="font-bold text-lg">
+                        {job.job_type === 'RESIDENTIAL' ? `${job.volume_cf || 0} cf` : `${job.weight_lbs || 0} lbs`}
+                      </p>
+                    </div>
+                    <div className="text-center border-l border-border/50">
+                      <p className="text-sm text-muted-foreground">Items</p>
+                      <p className="font-bold text-lg">
+                        {job.job_type === 'RESIDENTIAL' ? `${job.room_count || 0} Rooms` : `${job.pallet_count || 0} Pallets`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Inventory List</h3>
+                    {job.estimated_items && Object.keys(job.estimated_items).length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {Object.entries(job.estimated_items).map(([item, count]) => (
+                          <div key={item} className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg border border-border/50">
+                            <span className="text-sm font-medium">{item}</span>
+                            <span className="text-xs font-bold bg-secondary text-secondary-foreground px-2 py-1 rounded-md">{String(count)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">No detailed inventory provided.</p>
+                    )}
+                  </div>
+                </InfoCard>
+              </motion.div>
+            )}
+
+            {activeTab === 'billing' && (
+              <motion.div
+                key="billing"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+              >
+                <InfoCard title="Billing & Invoices" icon={FileText}>
+                  <div className="text-center py-10 text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                    <p>No invoices generated for this job yet.</p>
+                    <Button variant="outline" className="mt-4">Generate Invoice</Button>
+                  </div>
+                </InfoCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="lg:col-span-1 space-y-6">
-          <InfoCard title="Shipment Assignment" icon={Truck}>
-            {currentShipment ? (
-              <>
-                {/* View Mode */}
-                {!isEditing ? (
-                  <div className="space-y-4">
-                    <div className="space-y-3">
-                      <InfoRow label="Status" value={<StatusBadge status={currentShipment.status} />} />
-                      <InfoRow label="Driver" value={
-                        currentShipment.driver
-                          ? `${currentShipment.driver.user.first_name} ${currentShipment.driver.user.last_name}`
-                          : "Not assigned"
-                      } icon={User} />
-                      <InfoRow label="Vehicle" value={
-                        currentShipment.vehicle
-                          ? `${currentShipment.vehicle.license_plate} (${currentShipment.vehicle.make} ${currentShipment.vehicle.model})`
-                          : "Not assigned"
-                      } icon={Truck} />
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2">
-                      {canEditAssignment && (
-                        <Button
-                          variant="outline"
-                          className="w-full border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                          onClick={() => setIsEditing(true)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Assignment
-                        </Button>
-                      )}
-
-                      {currentShipment.status === 'ASSIGNED' && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            onClick={handleMarkDelivered}
-                            disabled={isSubmitting}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Delivered
-                          </Button>
-                          <Button
-                            onClick={handleMarkFailed}
-                            disabled={isSubmitting}
-                            variant="destructive"
-                          >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Failed
-                          </Button>
-                        </div>
-                      )}
-
-                      {(currentShipment.status === 'DELIVERED' || currentShipment.status === 'FAILED') && (
-                        <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                            {currentShipment.status === 'DELIVERED'
-                              ? '✅ Delivery completed successfully'
-                              : '❌ Delivery failed - requires attention'
-                            }
-                          </p>
-                        </div>
-                      )}
+        {/* Right Column: Sidebar Actions */}
+        <div className="lg:col-span-4 space-y-6">
+          <InfoCard title="Assignment" icon={Truck} className="border-primary/20 shadow-lg shadow-primary/5">
+            {!isEditing ? (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
+                    <User className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Driver</p>
+                      <p className="font-medium">
+                        {currentShipment?.driver ? `${currentShipment.driver.user.first_name} ${currentShipment.driver.user.last_name}` : 'Unassigned'}
+                      </p>
                     </div>
                   </div>
-                ) : (
-                  /* Edit Mode */
-                  <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
+                    <Truck className="w-5 h-5 text-amber-500" />
                     <div>
-                      <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">Driver</label>
-                      <Select onValueChange={setSelectedDriverId} value={selectedDriverId}>
-                        <SelectTrigger className="bg-white dark:bg-gray-700">
-                          <SelectValue placeholder="Select a driver" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Not assigned</SelectItem>
-                          {drivers?.map(d => (
-                            <SelectItem key={d.id} value={d.id}>
-                              {d.user.first_name} {d.user.last_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">Vehicle</label>
-                      <Select onValueChange={setSelectedVehicleId} value={selectedVehicleId}>
-                        <SelectTrigger className="bg-white dark:bg-gray-700">
-                          <SelectValue placeholder="Select a vehicle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Not assigned</SelectItem>
-                          {vehicles?.map(v => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.make} {v.model} ({v.license_plate})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="ghost" className="flex-1" onClick={() => setIsEditing(false)}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleAssign}
-                        disabled={isSubmitting}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        {isSubmitting ? "Saving..." : "Save Assignment"}
-                      </Button>
+                      <p className="text-xs text-muted-foreground">Vehicle</p>
+                      <p className="font-medium">
+                        {currentShipment?.vehicle ? `${currentShipment.vehicle.make} ${currentShipment.vehicle.model}` : 'Unassigned'}
+                      </p>
                     </div>
                   </div>
-                )}
-              </>
-            ) : (
-              /* No Shipment - Create Assignment */
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                  This job is not yet assigned to a driver and vehicle.
-                </p>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">Driver</label>
-                  <Select onValueChange={setSelectedDriverId} value={selectedDriverId}>
-                    <SelectTrigger className="bg-white dark:bg-gray-700">
-                      <SelectValue placeholder="Select a driver" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Not assigned</SelectItem>
-                      {drivers?.map(d => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.user.first_name} {d.user.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700 dark:text-gray-300">Vehicle</label>
-                  <Select onValueChange={setSelectedVehicleId} value={selectedVehicleId}>
-                    <SelectTrigger className="bg-white dark:bg-gray-700">
-                      <SelectValue placeholder="Select a vehicle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Not assigned</SelectItem>
-                      {vehicles?.map(v => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.make} {v.model} ({v.license_plate})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  onClick={handleAssign}
-                  disabled={isSubmitting}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  {isSubmitting ? "Creating..." : "Create Assignment"}
+                <Button onClick={() => setIsEditing(true)} className="w-full">
+                  {currentShipment?.driver ? 'Change Assignment' : 'Assign Driver'}
                 </Button>
+              </div>
+            ) : (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Driver</label>
+                  <Select onValueChange={setSelectedDriverId} value={selectedDriverId}>
+                    <SelectTrigger><SelectValue placeholder="Driver" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {drivers?.map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.user.first_name} {d.user.last_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Vehicle</label>
+                  <Select onValueChange={setSelectedVehicleId} value={selectedVehicleId}>
+                    <SelectTrigger><SelectValue placeholder="Vehicle" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {vehicles?.map(v => (
+                        <SelectItem key={v.id} value={v.id}>{v.make} {v.model}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => setIsEditing(false)} className="flex-1">Cancel</Button>
+                  <Button onClick={handleAssign} disabled={isSubmitting} className="flex-1">{isSubmitting ? 'Saving...' : 'Save'}</Button>
+                </div>
               </div>
             )}
           </InfoCard>
 
-          {/* Proof of Delivery Image Section */}
           {(currentShipment?.proof_of_delivery_image || job.proof_of_delivery_image) && (
-            <InfoCard title="Proof of Delivery" icon={CheckCircle}>
-              <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <InfoCard title="Proof of Delivery" icon={FileCheck}>
+              <div className="aspect-video relative rounded-lg overflow-hidden bg-gray-100 mb-2">
                 <img
                   src={currentShipment?.proof_of_delivery_image || job.proof_of_delivery_image || ''}
-                  alt="Proof of Delivery"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+                  alt="POD"
+                  className="object-cover w-full h-full hover:scale-105 transition-transform"
                 />
               </div>
-              <div className="flex justify-between items-center mt-2">
-                <p className="text-sm text-gray-500">Uploaded by driver</p>
-                <a
-                  href={currentShipment?.proof_of_delivery_image || job.proof_of_delivery_image || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  View Full Size
-                </a>
-              </div>
+              <Button variant="link" className="w-full h-auto p-0 text-xs">View Full Size</Button>
             </InfoCard>
           )}
-
         </div>
       </div>
     </div>

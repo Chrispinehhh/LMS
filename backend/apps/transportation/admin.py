@@ -163,6 +163,7 @@ class ShipmentAdmin(admin.ModelAdmin):
 class ShipmentPhotoInline(admin.TabularInline):
     model = ShipmentPhoto # Need to make sure ShipmentPhoto is imported
     extra = 0
+    fields = ('photo_type', 'image', 'image_preview')
     readonly_fields = ('image_preview',)
 
     def image_preview(self, obj):

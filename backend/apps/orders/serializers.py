@@ -53,7 +53,17 @@ class JobSerializer(serializers.ModelSerializer):
             'customer',
             'customer_id',
             'status', # The status now comes from the current timeline entry
-            'service_type',
+            'job_type',
+            'service_type', # Legacy support
+            'room_count',
+            'volume_cf',
+            'pallet_count',
+            'weight_lbs',
+            'pricing_model',
+            'hourly_rate',
+            'travel_fee',
+            'cwt_rate',
+            'flat_rate',
             'cargo_description',
             'pickup_address',
             'pickup_city',

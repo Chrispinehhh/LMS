@@ -26,3 +26,9 @@ coverage/
 .vscode/
 .idea/
 *.swp
+
+# Temporary build artifacts
+.next_locked_by_docker/
+.next_old_customer_portal/
+.next.bak/
+.next_backup_2/

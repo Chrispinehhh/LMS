@@ -95,6 +95,16 @@ class JobAdmin(admin.ModelAdmin):
                 'delivery_contact_phone'
             )
         }),
+        ('Residential Details', {
+            'fields': ('crew_size', 'estimated_items'),
+            'classes': ('collapse',),
+            'description': 'Fields specific to Residential jobs.'
+        }),
+        ('Commercial Details', {
+            'fields': ('is_hazardous', 'bol_number'),
+            'classes': ('collapse',),
+            'description': 'Fields specific to Commercial jobs.'
+        }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)  # Makes this section collapsible

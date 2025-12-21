@@ -34,5 +34,32 @@ class Invoice(BaseModel):
     )
     payment_notes = models.TextField(blank=True, help_text="Internal notes for manual payments (e.g., cheque number, transaction ID).")
 
+    # --- Financials ---
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    tax_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    
+    # Snapshot of the tax rule applied
+    tax_rule_applied = models.JSONField(null=True, blank=True, help_text="Snapshot of the TaxRule used (rate, name, region)")
+
+    def calculate_totals(self):
+        """
+        Helper method to auto-calculate totals based on active TaxRule for the jobs region if possible.
+        For now, this is a placeholder for the logic.
+        """
+        self.total_amount = self.subtotal + self.tax_amount
+
     def __str__(self):
         return f"Invoice {self.id} for Job {self.job.id}"
+
+
+class TaxRule(BaseModel):
+    """
+    Defines tax rates for different regions (e.g., ON, BC, KENYA).
+    """
+    region_code = models.CharField(max_length=10, unique=True, help_text="e.g. 'ON', 'BC', 'KE'")
+    tax_name = models.CharField(max_length=50, help_text="e.g. 'HST', 'GST+PST', 'VAT'")
+    rate = models.DecimalField(max_digits=5, decimal_places=4, help_text="e.g. 0.1300 for 13%")
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.region_code} - {self.tax_name} ({self.rate * 100}%)"

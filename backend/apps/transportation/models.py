@@ -105,10 +105,17 @@ class Shipment(BaseModel):
 
 class ShipmentPhoto(BaseModel):
     """
-    Allows multiple photos for a single shipment's Proof of Delivery.
+    Allows multiple photos for a single shipment's Proof of Delivery and Condition.
     """
+    class PhotoType(models.TextChoices):
+        PRE_MOVE = 'PRE_MOVE', 'Pre-Move Condition'
+        POST_MOVE = 'POST_MOVE', 'Post-Move Condition'
+        POD = 'POD', 'Proof of Delivery'
+        OTHER = 'OTHER', 'Other'
+
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='photos')
     image = models.ImageField(upload_to='proof_of_delivery/')
+    photo_type = models.CharField(max_length=20, choices=PhotoType.choices, default=PhotoType.POD)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

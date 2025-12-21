@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { ModeToggle } from "@/components/theme-toggle";
+import { Sidebar } from "@/components/layout/Sidebar";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { backendUser, loading, logout } = useAuth();
@@ -43,134 +45,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Navigation */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl 
-        text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 
-        flex flex-col shadow-xl
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">S&S</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-                  S&S Logistics
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Management Portal</p>
-              </div>
-            </div>
-            {/* Close button for mobile */}
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
-          {/* Dashboard */}
-          <Link
-            href="/dashboard"
-            onClick={() => setIsSidebarOpen(false)}
-            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 group"
-          >
-            <LayoutDashboard className="w-5 h-5 text-emerald-600" />
-            <span className="font-medium">Dashboard</span>
-          </Link>
-
-          {/* Operations Section */}
-          {backendUser && (backendUser.role === 'ADMIN' || backendUser.role === 'MANAGER') && (
-            <div className="space-y-2">
-              <div className="px-3 pt-4 pb-2">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Operations</p>
-              </div>
-              <Link
-                href="/jobs"
-                onClick={() => setIsSidebarOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 group"
-              >
-                <Briefcase className="w-5 h-5 text-blue-500" />
-                <span className="font-medium">Jobs</span>
-              </Link>
-            </div>
-          )}
-
-          {/* Team & Fleet Section */}
-          {backendUser && (backendUser.role === 'ADMIN' || backendUser.role === 'MANAGER') && (
-            <div className="space-y-2">
-              <div className="px-3 pt-4 pb-2">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team & Fleet</p>
-              </div>
-              <Link
-                href="/employees"
-                onClick={() => setIsSidebarOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 group"
-              >
-                <Users className="w-5 h-5 text-green-500" />
-                <span className="font-medium">Employees</span>
-              </Link>
-              <Link
-                href="/fleet/drivers"
-                onClick={() => setIsSidebarOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 group"
-              >
-                <UserCog className="w-5 h-5 text-amber-500" />
-                <span className="font-medium">Drivers</span>
-              </Link>
-              <Link
-                href="/fleet/vehicles"
-                onClick={() => setIsSidebarOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 group"
-              >
-                <Truck className="w-5 h-5 text-purple-500" />
-                <span className="font-medium">Vehicles</span>
-              </Link>
-            </div>
-          )}
-
-          {/* Admin Section */}
-          {backendUser && backendUser.role === 'ADMIN' && (
-            <div className="space-y-2">
-              <div className="px-3 pt-4 pb-2">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Administration</p>
-              </div>
-              <Link
-                href="/users"
-                onClick={() => setIsSidebarOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all duration-200 group"
-              >
-                <Users className="w-5 h-5 text-red-500" />
-                <span className="font-medium">Users</span>
-              </Link>
-            </div>
-          )}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">S&S Logistics v1.0</p>
-          </div>
-        </div>
-      </aside>
+      {/* Sidebar Component */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden">
