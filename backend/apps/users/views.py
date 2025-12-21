@@ -4,6 +4,7 @@ import logging
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.db import transaction
 
 # Firebase Admin SDK
 from firebase_admin import auth
@@ -42,8 +43,43 @@ class FirebaseLoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         id_token = serializer.validated_data["token"]
 
+        # Check if Firebase is actually initialized
         try:
-            decoded_token = auth.verify_id_token(id_token)
+            # We try to access the default app. If it's not initialized,
+            # this might throw or return None depending on version,
+            # but auth.verify_id_token will definitely fail.
+            pass
+        except Exception:
+            return Response(
+                {"error": "Firebase service is unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        try:
+            try:
+                decoded_token = auth.verify_id_token(id_token)
+            except ValueError as e:
+                 # likely "The default Firebase app does not exist" or
+                 # similar config issue
+                logger.error(f"Firebase configuration error in Login: {e}")
+                return Response(
+                    {"error": "Identity service unavailable."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            except auth.InvalidIdTokenError:
+                return Response(
+                    {"error": "Invalid authentication token."},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            except Exception as e:
+                logger.error(f"Firebase verification failed: {e}")
+                # Don't re-raise, return 503 if it's likely a connection/service issue
+                # or 500 with details
+                return Response(
+                    {"error": f"Authentication service error: {str(e)}"},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+
             firebase_uid = decoded_token["uid"]
             email = decoded_token.get("email")
             name = decoded_token.get("name", "")
@@ -71,7 +107,11 @@ class FirebaseLoginView(generics.GenericAPIView):
 
         except Exception as e:
             logger.error(f"Error in FirebaseLoginView: {e}", exc_info=True)
-            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # EXPOSE THE ERROR for debugging
+            return Response(
+                {"error": f"Internal error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 # NOTE: This view is already defined in the original code, 
@@ -97,35 +137,92 @@ class CreateUserView(generics.CreateAPIView):
         # ... other fields
 
         if not email or not password:
-            return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Email and password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        # Check if Firebase is actually initialized
+        try:
+            # We try to access the default app. If it's not initialized,
+            # this might throw or return None depending on version,
+            # but auth.create_user will definitely fail.
+            pass
+        except Exception:
+            return Response(
+                {"error": "Firebase service is unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        firebase_user = None
         try:
             # Step 1: Create user in Firebase
-            firebase_user = auth.create_user(
-                email=email,
-                password=password,
-                display_name=f"{request.data.get('first_name', '')} {request.data.get('last_name', '')}".strip()
-            )
-            
-            # Step 2: Create local user, using Firebase UID as username for consistency
-            local_user = User.objects.create_user(
-                username=firebase_user.uid, 
-                email=email,
-                # CRITICAL: Django's create_user automatically hashes the password.
-                password=password, 
-                first_name=request.data.get('first_name', ''),
-                last_name=request.data.get('last_name', ''),
-                role=request.data.get('role', User.Role.DRIVER)
-            )
-            
+            try:
+                firebase_user = auth.create_user(
+                    email=email,
+                    password=password,
+                    display_name=f"{request.data.get('first_name', '')} {request.data.get('last_name', '')}".strip()
+                )
+            except ValueError as e:
+                # likely "The default Firebase app does not exist" or
+                # similar config issue
+                logger.error(f"Firebase configuration error: {e}")
+                return Response(
+                    {"error": "Identity service unavailable."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            except auth.EmailAlreadyExistsError:
+                return Response(
+                    {"error": "A user with this email already exists."},
+                    status=status.HTTP_409_CONFLICT
+                )
+            except Exception as e:
+                logger.error(f"Firebase creation failed: {e}")
+                raise e  # Re-raise to be caught by the outer try/except
+
+            # Step 2: Create local user, using Firebase UID as username
+            # Use a transaction to ensure no zombie Firebase users
+            try:
+                with transaction.atomic():
+                    local_user = User.objects.create_user(
+                        username=firebase_user.uid,
+                        email=email,
+                        # CRITICAL: create_user hashes the password.
+                        password=password,
+                        first_name=request.data.get('first_name', ''),
+                        last_name=request.data.get('last_name', ''),
+                        role=request.data.get('role', User.Role.DRIVER)
+                    )
+            except Exception as db_error:
+                # If local DB creation fails, DELETE Firebase user
+                logger.error(
+                    f"Local user creation failed: {db_error}. "
+                    f"Rolling back Firebase user {firebase_user.uid}..."
+                )
+                try:
+                    auth.delete_user(firebase_user.uid)
+                    logger.info(
+                        f"Rolled back Firebase user {firebase_user.uid}"
+                    )
+                except Exception as cleanup_error:
+                    logger.critical(
+                        "CRITICAL: Failed to rollback Firebase user "
+                        f"{firebase_user.uid} after local DB failure! "
+                        f"Error: {cleanup_error}"
+                    )
+
+                # Re-raise the original DB error to return a 500
+                raise db_error
+
             serializer = self.get_serializer(local_user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        except auth.EmailAlreadyExistsError:
-            return Response({"error": "A user with this email already exists."}, status=status.HTTP_409_CONFLICT)
         except Exception as e:
             logger.error(f"Error in CreateUserView: {e}", exc_info=True)
-            return Response({"error": "An internal server error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "An internal server error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class CurrentUserView(generics.RetrieveAPIView):

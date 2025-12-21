@@ -13,26 +13,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect } from "react";
+import { User } from "lucide-react";
 
 // Define the possible response types for users endpoint
-type UsersResponse = 
+type UsersResponse =
   | BackendUser[]  // Direct array
   | PaginatedResponse<BackendUser>;  // Paginated response
 
 // Helper function to extract users from different response formats
 function extractUsers(data: UsersResponse | null): BackendUser[] {
   if (!data) return [];
-  
+
   // If it's already an array
   if (Array.isArray(data)) {
     return data;
   }
-  
+
   // If it's a paginated response (Django REST framework)
   if ('results' in data && Array.isArray(data.results)) {
     return data.results;
   }
-  
+
   return [];
 }
 
@@ -51,7 +52,7 @@ export default function EmployeesPage() {
 
   // Extract and filter employees
   const allUsers = extractUsers(usersResponse);
-  const employees = allUsers.filter(user => 
+  const employees = allUsers.filter(user =>
     user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'DRIVER'
   );
 
@@ -74,58 +75,64 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Employee Directory</h1>
-        <div className="text-sm text-gray-500">
-          {employees.length} employees found
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">Employee Directory</h1>
+          <p className="text-blue-600 dark:text-blue-300 mt-2">
+            Manage your team members and their roles
+            {employees.length > 0 && (
+              <span> ({employees.length} active)</span>
+            )}
+          </p>
+        </div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           {usersResponse && 'count' in usersResponse && (
-            <span> (of {usersResponse.count} total users)</span>
+            <span>Total Users: {usersResponse.count}</span>
           )}
         </div>
       </div>
-      
-      <div className="bg-white shadow rounded-lg">
+
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
+            <TableRow className="bg-gray-50 dark:bg-gray-700/50">
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Name</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Email</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Role</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-2">Loading employees...</span>
+                  <div className="flex justify-center items-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 dark:border-purple-400"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Loading employees...</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : employees.length > 0 ? (
               employees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell className="font-medium">
+                <TableRow key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <TableCell className="font-medium text-gray-900 dark:text-white">
                     {employee.first_name} {employee.last_name}
                   </TableCell>
-                  <TableCell>{employee.email}</TableCell>
+                  <TableCell className="text-gray-700 dark:text-gray-300">{employee.email}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      employee.role === 'ADMIN' 
-                        ? 'bg-purple-100 text-purple-800'
-                        : employee.role === 'MANAGER'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${employee.role === 'ADMIN'
+                      ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700'
+                      : employee.role === 'MANAGER'
+                        ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
+                        : 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700'
+                      }`}>
                       {employee.role}
                     </span>
                   </TableCell>
                   <TableCell>
                     {/* Since we don't have is_active in the type, we'll assume all are active */}
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700">
                       Active
                     </span>
                   </TableCell>
@@ -133,13 +140,14 @@ export default function EmployeesPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
-                  {usersResponse ? 'No employees found in the data' : 'No data received from API'}
-                  {usersResponse && (
-                    <div className="text-xs text-gray-500 mt-2">
+                <TableCell colSpan={4} className="text-center py-12">
+                  <div className="text-center space-y-3">
+                    <User className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">No employees found</p>
+                    <div className="text-xs text-gray-400 dark:text-gray-500">
                       Total users in response: {allUsers.length}
                     </div>
-                  )}
+                  </div>
                 </TableCell>
               </TableRow>
             )}

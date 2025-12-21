@@ -101,8 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         router.push('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during Google login:", error);
+      if (error.response && error.response.data) {
+        console.error("Backend Error Details:", error.response.data);
+      }
       const auth = getFirebaseAuth();
       if (auth) signOut(auth);
       removeToken();

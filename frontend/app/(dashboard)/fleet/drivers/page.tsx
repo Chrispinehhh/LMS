@@ -22,9 +22,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { User } from "lucide-react";
 
 // Define the possible response types for drivers endpoint
-type DriversResponse = 
+type DriversResponse =
   | Driver[]
   | PaginatedResponse<Driver>;
 
@@ -38,7 +39,7 @@ function extractDrivers(data: DriversResponse | null): Driver[] {
 
 export default function DriversPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  
+
   // Try different possible endpoints for drivers
   const { data: driversResponse, error, isLoading, mutate } = useApi<DriversResponse>('/transportation/drivers/');
   const { backendUser } = useAuth();
@@ -49,7 +50,7 @@ export default function DriversPage() {
   if (backendUser?.role !== 'ADMIN' && backendUser?.role !== 'MANAGER') {
     return <p className="p-6">You do not have permission to view this page.</p>;
   }
-  
+
   const handleFormSuccess = () => {
     setModalOpen(false);
     mutate(); // Re-fetch the drivers list
@@ -69,49 +70,54 @@ export default function DriversPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Fleet - Drivers</h1>
-          <p className="text-gray-600 mt-1">Manage your delivery drivers and their profiles</p>
+          <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-400">Fleet - Drivers</h1>
+          <p className="text-blue-600 dark:text-blue-300 mt-2">
+            Manage your delivery drivers and their profiles
+            {drivers.length > 0 && (
+              <span> ({drivers.length} active)</span>
+            )}
+          </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>Add New Driver</Button>
       </div>
-      
-      <div className="bg-white shadow rounded-lg">
+
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Driver Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone Number</TableHead>
-              <TableHead>License Number</TableHead>
-              <TableHead>Status</TableHead>
+            <TableRow className="bg-gray-50 dark:bg-gray-700/50">
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Driver Name</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Email</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Phone Number</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">License Number</TableHead>
+              <TableHead className="text-gray-900 dark:text-white font-semibold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-2">Loading drivers...</span>
+                  <div className="flex justify-center items-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 dark:border-purple-400"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Loading drivers...</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : drivers.length > 0 ? (
               drivers.map((driver) => (
-                <TableRow key={driver.id}>
-                  <TableCell className="font-medium">
+                <TableRow key={driver.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <TableCell className="font-medium text-gray-900 dark:text-white">
                     {driver.user.first_name} {driver.user.last_name}
                   </TableCell>
-                  <TableCell>{driver.user.email}</TableCell>
-                  <TableCell>{driver.phone_number}</TableCell>
-                  <TableCell className="font-mono text-sm">
+                  <TableCell className="text-gray-700 dark:text-gray-300">{driver.user.email}</TableCell>
+                  <TableCell className="text-gray-700 dark:text-gray-300">{driver.phone_number}</TableCell>
+                  <TableCell className="font-mono text-sm text-gray-700 dark:text-gray-300">
                     {driver.license_number}
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700">
                       Active
                     </span>
                   </TableCell>
@@ -119,10 +125,11 @@ export default function DriversPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  <div className="text-center">
-                    <p className="text-gray-500">No drivers found.</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                <TableCell colSpan={5} className="text-center py-12">
+                  <div className="text-center space-y-3">
+                    <User className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">No drivers found</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                       Click &quot;Add New Driver&quot; to create your first driver profile.
                     </p>
                   </div>
