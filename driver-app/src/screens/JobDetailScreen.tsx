@@ -173,7 +173,7 @@ export default function JobDetailScreen() {
       });
 
       // Using the new complete-delivery endpoint
-      await apiClient.post(`/driver/jobs/${jobId}/complete-delivery/`, formData, {
+      await apiClient.post(`/driver/jobs/${jobId}/complete_delivery/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
